@@ -1,0 +1,10 @@
+#!/bin/bash
+
+##HACKABOT_HELP##
+# Almost never a wine worth drinking
+# !wine.woot
+##HACKABOT_HELP##
+
+echo sendnext
+#lynx -source www.woot.com | egrep "ctl00_ContentPlaceHolder_TitleHeader|PriceSpan" | sed -e 's/<[^>]*>//g' | perl -pi -e 's/^\s*(\S*.*)/$1/'
+lynx -source wine.woot.com | awk '/productDescription/,/shippingOptions/' | sed -e 's/<[a-zA-Z\/][^>]*>//g' | perl -pi -e 's/^\s*(\S*.*)/$1/'

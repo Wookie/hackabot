@@ -1,0 +1,10 @@
+#!/bin/bash
+
+##HACKABOT_HELP##
+# Print the date.
+# !date
+##HACKABOT_HELP##
+
+echo sendnext
+date
+

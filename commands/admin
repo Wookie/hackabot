@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Run Administrative tasks
+# !admin join #chan | part #chan | nick name | quit msg
+##HACKABOT_HELP##
+
+import string
+import sys
+import os
+import re
+from command import Command
+
+class Admin(Command):
+    """
+    Runs administrative tasks
+    """
+
+    def __init__(self):
+        super(Admin, self).__init__('admin')
+
+    def main(self):
+        
+        # get the admin command
+        command_line = self._get_command_line()
+
+        # get the command and arguments
+        c = re.match(r'(\S*)\s*(.*)', command_line)
+        cmd = c.group(1)
+        arg = c.group(2)
+
+        if cmd.lower() in ('quit', 'nick', 'join', 'part'):
+            print >> sys.stdout, "%s %s" % (cmd, arg)
+
+    def _get_command_line(self):
+        for line in sys.stdin.readlines():
+            if re.match(r'msg\s*(.*)', line):
+                c = re.match(r'msg\s*(.*)', line)
+                return c.group(1)
+
+if __name__ == "__main__":
+    cmd = Admin()
+    sys.exit(cmd.main())

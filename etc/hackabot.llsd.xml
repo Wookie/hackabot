@@ -1,0 +1,239 @@
+<?xml version="1.0" ?>
+<llsd>
+<map>
+    <!-- the root directory where hackabot is -->
+    <key>directory</key>
+    <string>/home/huseby/opt/hackabot</string>
+
+    <!-- the etc dir where hackabot's configs are -->
+    <key>etc</key>
+    <string>etc</string>
+
+    <!-- the directory containing hook scripts -->
+    <key>hooks</key>
+    <string>newhooks</string>
+
+    <!-- the directory containing command scripts -->
+    <key>commands</key>
+    <string>newcommands</string>
+
+    <!-- the database to use -->
+    <key>database</key>
+    <string>mysql</string>
+    
+    <!-- this is the "name" value associated with the bot's nick -->
+    <key>name</key>
+    <string>A spiffy little bot</string>
+
+    <!-- the nick to use when connecting -->
+    <key>nick</key>
+    <string>manatee_test</string>
+
+    <!-- the server to connect to -->
+    <key>server</key>
+    <string>irc.lindenlab.com</string>
+
+    <!-- the port to connect to -->
+    <key>port</key>
+    <integer>6667</integer>
+
+    <!-- the server password -->
+    <!--
+    <key>password</key>
+    <string>somepassword</string>
+    -->
+
+    <!-- seconds to wait after connection is lost -->
+    <key>reconnect</key>
+    <integer>60</integer>
+
+    <!-- the file to use for the command socket -->
+    <key>socket</key>
+    <string>newsock</string>
+
+    <!-- this is a list of folder to add to the Python sys.path array -->
+    <key>pythonpath</key>
+    <array>
+        <string>lib/python</string>
+    </array>
+
+    <!-- these are the available database configurations, one for each
+         of the supported databases.  the database that hackabot will
+         use is set by the "database" key up near the top of this file.
+    -->
+    <key>databases</key>
+    <map>
+
+        <!-- mysql database config -->
+        <key>mysql</key>
+        <map>
+            <key>host</key>
+            <string>localhost</string>
+            <key>name</key>
+            <string>manatee_data</string>
+            <key>pass</key>
+            <string>hackabot</string>
+            <key>user</key>
+            <string>manatee</string>
+        </map>
+
+        <!-- sqlite database config -->
+        <key>sqlite</key>
+        <map>
+            <key>file</key>
+            <string>misc/sqlite.db</string>
+        </map>
+    </map>
+
+    <!-- the array of messages to automatically send after connecting 
+         but before joining any channels.  this is useful for talking
+         to a chanserv and nickserv.
+    -->
+    <!--
+    <key>automsg</key>
+    <array>
+        <map>
+            <key>to</key>
+            <string>nickserv</string>
+            <key>msg</key>
+            <string>identify something</string>
+        </map>
+        <map>
+            <key>to</key>
+            <string>chanserv</string>
+            <key>msg</key>
+            <string>invite #somechan</string>
+        </map>
+    </array>
+    -->
+
+    <!-- the array of channels to autojoin when connecting -->
+    <key>autojoin</key>
+    <array>
+        <!-- an example channel autojoin block -->
+        <!--
+        <map>
+            <key>chan</key>
+            <string>#somechan</string>
+            <key>msg</key>
+            <string>I is here</string>
+            <key>password</key>
+            <string>letmein</string>
+            <key>part</key>
+            <string>goodbye cruel channel</string>
+        </map>
+        -->
+        <map>
+            <key>chan</key>
+            <string>#manatee</string>
+            <key>msg</key>
+            <string>yay!! it works</string>
+        </map>
+        <!--
+        <map>
+            <key>chan</key>
+            <string>#chowdah</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#dev</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#django</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#giab</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#identity</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#lindenlab</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#mercurial</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#open</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#opensrc</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#ops</string>
+        </map>
+        <map>
+            <key>chan</key>
+            <string>#seattle</string>
+        </map>
+        -->
+    </array>
+
+    <!-- command specific config blocks -->
+    <key>cmdconfig</key>
+    <map>
+
+        <!-- imitate command config -->
+        <key>imitate</key>
+        <map>
+            <key>limitlines</key>
+            <integer>200</integer>
+            <key>maxlines</key>
+            <integer>50</integer>
+            <key>maxwords</key>
+            <integer>40</integer>
+            <key>wordlength</key>
+            <integer>5</integer>
+        </map>
+
+        <!-- seen command config -->
+        <!--
+        <key>seen</key>
+        <map>
+            <key>privatechan</key>
+            <array>
+                <string>#private</string>
+            </array>
+        </map>
+        -->
+        
+        <!-- bookmark command -->
+        <!--
+        <key>bookmark</key>
+        <map>
+            <key>user</key>
+            <string>mydelicioususer</string>
+            <key>password</key>
+            <string>mydeliciouspassword</string>
+        </map>
+        -->
+
+        <!-- read it later -->
+        <!--
+        <key>readitlater</key>
+        <map>
+            <key>apikey</key>
+            <string>2342332542523523534343</string>
+        </map>
+        -->
+
+        <!-- topic command config -->
+        <key>topic</key>
+        <map>
+            <key>topicmask</key>
+            <map>
+                <key>#open</key>
+                <string>Free Range Devlopers :: </string>
+            </map>
+        </map>
+    </map>
+</map>
+</llsd>

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+##HACKABOT_HELP##
+# About this Bot
+# !about
+##HACKABOT_HELP##
+
+echo "sendnext"
+echo "Hackabot :: Version [something between 0 and 1]"
+echo "Originally From URL: http://code.google.com/p/hackabot/"
+echo "LL Hg Repo: http://hg.lindenlab.com/huseby/hackabot/"

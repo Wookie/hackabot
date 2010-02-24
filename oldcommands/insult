@@ -1,0 +1,47 @@
+#!/usr/bin/perl -w
+
+##HACKABOT_HELP##
+# Tell someone rude and confusing!
+# !insult [#chan] nick
+##HACKABOT_HELP##
+
+use strict;
+
+use LWP::Simple;
+use IO::Handle;
+STDOUT->autoflush(1);
+
+my $msg;
+while (<>) {
+	if (/^msg\s*(.*)/) {
+		$msg = $1;
+	}
+}
+
+if (defined $msg) {
+	if ($msg =~ /(#\S+)\s+(.+\S)/) {
+		my $insult = insult();
+		print "to $1\n";
+		print "send $2: $insult\n";
+	}
+	elsif ($msg =~ /\s*(.+\S)/) {
+		my $insult = insult();
+		print "send $1: $insult\n";
+	}
+	else {
+		print "send Usage: !insult [#chan] nick";
+	}
+}
+
+sub insult {
+	my $insult = get("http://www.webweaving.org/");
+
+	if ($insult =~ /(Thou\s[^\n]*)/) {
+		$insult = $1;
+		chomp $insult;
+		return "$insult!";
+	}
+	else {
+		return "I Love You!";
+	}
+}

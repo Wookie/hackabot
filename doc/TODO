@@ -1,0 +1,7 @@
+[X] 1. abstract database type so that different database types can be used.
+[ ] 2. add support for sqlite3 database.
+[X] 3. convert config file from XML to LLSD and switch to using llsd parser.
+[ ] 4. add support for running as a daemon with logging to syslog.
+[/] 5. port commands from other scripting languages to Python.
+[ ] 6. port jeffbot commands over to python hackabot commands.
+

@@ -1,0 +1,44 @@
+#!/usr/bin/python
+
+##HACKABOT_HELP##
+# Sample command that uses new hackabot python command tools
+# !ptest
+##HACKABOT_HELP##
+
+import string
+import sys
+import os
+import random
+from command import *
+
+class CoinFlip(Command):
+    """
+    An example command using new command writing tools.
+    """
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(CoinFlip, self).__init__()
+
+    def main(self):
+        """
+        example handler function
+        """
+
+        val = random.randint(0, 99)
+
+        # give sendnext command
+        print >> sys.stdout, "sendnext"
+
+        if val >= 50:
+            print >> sys.stdout, "heads"
+        else:
+            print >> sys.stdout, "tails"
+
+        return None
+
+
+if __name__ == "__main__":
+    cmd = CoinFlip()
+    sys.exit(cmd.main())
