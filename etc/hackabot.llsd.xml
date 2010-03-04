@@ -3,7 +3,7 @@
 <map>
     <!-- the root directory where hackabot is -->
     <key>directory</key>
-    <string>/home/huseby/opt/hackabot</string>
+    <string>/home/huseby/hackabot</string>
 
     <!-- the etc dir where hackabot's configs are -->
     <key>etc</key>
@@ -11,15 +11,15 @@
 
     <!-- the directory containing hook scripts -->
     <key>hooks</key>
-    <string>newhooks</string>
+    <string>hooks</string>
 
     <!-- the directory containing command scripts -->
     <key>commands</key>
-    <string>newcommands</string>
+    <string>commands</string>
 
     <!-- the database to use -->
     <key>database</key>
-    <string>mysql</string>
+    <string>sqlite</string>
     
     <!-- this is the "name" value associated with the bot's nick -->
     <key>name</key>
@@ -27,11 +27,11 @@
 
     <!-- the nick to use when connecting -->
     <key>nick</key>
-    <string>manatee_test</string>
+    <string>cgdbot</string>
 
     <!-- the server to connect to -->
     <key>server</key>
-    <string>irc.lindenlab.com</string>
+    <string>irc.freenode.net</string>
 
     <!-- the port to connect to -->
     <key>port</key>
@@ -49,7 +49,7 @@
 
     <!-- the file to use for the command socket -->
     <key>socket</key>
-    <string>newsock</string>
+    <string>sock</string>
 
     <!-- this is a list of folder to add to the Python sys.path array -->
     <key>pythonpath</key>
@@ -125,7 +125,7 @@
         -->
         <map>
             <key>chan</key>
-            <string>#manatee</string>
+            <string>#cgd</string>
             <key>msg</key>
             <string>yay!! it works</string>
         </map>
@@ -230,8 +230,8 @@
         <map>
             <key>topicmask</key>
             <map>
-                <key>#open</key>
-                <string>Free Range Devlopers :: </string>
+                <key>#cgd</key>
+                <string>Classic Game Dev :: </string>
             </map>
         </map>
     </map>

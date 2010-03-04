@@ -1,0 +1,10 @@
+syntax: glob
+
+\#*#
+*~
+*.orig
+*.pyc
+*.swp
+.svn
+.DS_Store
+*.pyc

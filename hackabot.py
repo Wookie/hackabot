@@ -7,34 +7,96 @@
 """Hackabot baby!
 
 This is the Python rewrite of Hackabot, aka manatee. This is the result of
+
 several rewrites of the original Perl version trying to either use multiple
 processes or threads. In short, Perl frickin sucks at sharing data between
 threads. Hopefully python will prove itself to be much better.
 """
 
-import string
-import thread
-import socket
-import time
-import sys
 import os
 import re
+import socket
+import string
+import subprocess
+import sys
+import thread
+import time
 from ircbot import SingleServerIRCBot
 from irclib import nm_to_n, nm_to_u, nm_to_h, Event
 from llbase import llsd
+from optparse import OptionParser
 
-# defaults for config values
-DEFAULT_RECONNECT = 60
+class Config(object):
+    """
+    Config wrapper
+    """
+
+    # default config values
+    DEFAULT_RECONNECT = 60
+    DEFAULT_PYTHONPATH = []
+    DEFAULT_AUTOMSG = []
+    DEFAULT_AUTOJOIN = []
+    DEFAULT_CMDCONFIG = {}
+
+    def __init__(self, config_file = None):
+
+        # figure out the path to the config file
+        if config_file:
+            self._config_file = config_file
+        else:
+            # get the path to the config
+            self._config_file = os.getenv('HACKABOT_CFG')
+        
+        if self._config_file == None:
+            print >> sys.stderr, 'Could not load hackabot config file'
+
+        # load the configuration
+        c = open(config, 'r')
+        self._config = llsd.parse_xml(c.read())
+        c.close()
+
+    def _set_defaults(self):
+        """
+        This sets sane defaults for values that must be defined.
+        """
+        # set reconnect default if it doesn't exist
+        if not self._config.has_key('reconnect'):
+            self._config['reconnect'] = Config.DEFAULT_RECONNECT
+
+        # set up default python paths
+        if not self._config.has_key('pythonpath'):
+            self._config['pythonpath'] = Config.DEFAULT_PYTHONPATH
+
+        # set up default automsg list
+        if not self._config.has_key('automsg'):
+            self._config['automsg'] = Config.DEFAULT_AUTOMSG
+
+        # set up default autojoin list
+        if not self._config.has_key('autojoin'):
+            self._config['autojoin'] = Config.DEFAULT_AUTOJOIN
+
+        # set up the default cmdconfig map
+        if not self._config.has_key('cmdconfig'):
+            self._config['cmdconfig'] = Config.DEFAULT_CMDCONFIG
+
+    def __get__(self, key):
+        if self._config.has_key(key):
+            return self._config[key]
+
+        return None
+
+    def __set__(self, key, value):
+        self._config[key] = value
+
 
 class Hackabot(SingleServerIRCBot):
 
     def __init__(self, file):
-
         # load up the config
-        self._load_config(file)
+        self._config = Config(os.path.realpath(file))
       
         # set up the environment
-        self._init_env(file)
+        self._init_env()
 
         # get the server info
         server_info = [ self._config['server'], self._config['port'] ]
@@ -49,34 +111,6 @@ class Hackabot(SingleServerIRCBot):
             self._config['nick'],
             self._config['name'],
             self._config['reconnect'] )
-
-    def _load_config(self, file):
-        """
-        load up the config file, parse it and set default values
-        for any config parameters that are missing but need to
-        exists.
-        """
-
-        # load up the config
-        c = open(file, 'r')
-        self._config = llsd.parse_xml(c.read())
-        c.close()
-
-        # set reconnect default if it doesn't exist
-        if not self._config.has_key('reconnect'):
-            self._config['reconnect'] = DEFAULT_RECONNECT
-
-        # set up default python paths
-        if not self._config.has_key('pythonpath'):
-            self._config['pythonpath'] = []
-
-        # set up default automsg list
-        if not self._config.has_key('automsg'):
-            self._config['automsg'] = []
-
-        # set up default autojoin list
-        if not self._config.has_key('autojoin'):
-            self._config['autojoin'] = []
 
     def _init_env(self, file):
         """
@@ -105,9 +139,13 @@ class Hackabot(SingleServerIRCBot):
 
         # if they specify "pythonpath" in the config, then set the PYTHONPATH
         # env variable so that python scripts can import hackabot-local utility
-        # classes.
+        # cLasses.
+        python_path = os.getenv('PYTHONPATH')
         for ppath in self._config['pythonpath']:
-            os.putenv("PYTHONPATH", os.path.join(root_dir, ppath))
+            python_path = os.path.join(root_dir, ppath) + ':' + python_path
+
+        # set the new python path
+        os.putenv("PYTHONPATH", python_path)
 
     ### irclib event callbacks ###
 
@@ -293,28 +331,28 @@ class Hackabot(SingleServerIRCBot):
             return
        
         # open a new process with I/O pipes
-        write,read = os.popen2(cmd)
-
+        #write,read = os.popen2(cmd)
+        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
         # write the command parameters to the command handler's STDIN
-        write.write("type "+event.eventtype()+"\n")
+        print >> p.stdin, 'type %s' % event.eventtype()
         if isinstance(event.source(), str):
-            write.write("nick "+nm_to_n(event.source())+"\n")
-            if event.source().find('!') > 0: 
-                write.write("user "+ \
-                    nm_to_u(event.source())+"\n")
-            if event.source().find('@') > 0: 
-                write.write("host "+ \
-                    nm_to_h(event.source())+"\n")
+            print >> p.stdin, 'nick %s' % nm_to_n(event.source())
+            if event.source().find('!') > 0:
+                print >> p.stdin, 'user %s' % nm_to_u(event.source())
+            if event.source().find('@') > 0:
+                print >> p.stdin, 'host %s' % nm_to_u(event.source())
         if isinstance(to, str):
-            write.write("to "+to+"\n")
+            print >> p.stdin, 'to %s' % to
         if isinstance(msg, str):
-            write.write("msg "+msg+"\n")
-        write.write("currentnick %s\n" % self.connection.get_nickname())
-        write.close()
+            print >> p.stdin, 'msg %s' % msg
+        print >> p.stdin, 'currentnick %s' % self.connection.get_nickname()
+        p.stdin.close()
 
         # process the output from the command handler
-        ret = self.process(read, to, event)
-        read.close()
+        ret = self.process(p.stdout, to, event)
+        p.stdout.close()
 
         return ret
     
@@ -485,7 +523,6 @@ class Hackabot(SingleServerIRCBot):
         while True:
             client,c = listen.accept()
             thread.start_new_thread(self.servclient,(client,))
-        #what should I do with this:
         listen.close()
     
     def servclient(self, client):
@@ -497,13 +534,50 @@ class Hackabot(SingleServerIRCBot):
     def msg(self, txt):
         print "hackabot:",txt
 
-def main():
-    if len(sys.argv) != 2:
-        print "Usage:",sys.argv[0],"path/to/config.xml"
-        sys.exit(1)
+def find_config_root(app_conf_dir, APP_CONF_DIR_ENV_VAR):
+    # 1. Look in current working direction.
+    if os.path.isdir(app_conf_dir):
+        return abspath(app_conf_dir)
 
-    bot = Hackabot(sys.argv[1])
+    # 2. Look for env var.
+    if os.environ.has_key(APP_CONF_DIR_ENV_VAR) and \
+           os.path.isdir(os.environ[APP_CONF_DIR_ENV_VAR]):
+        config_root = os.environ[APP_CONF_DIR_ENV_VAR]
+
+    # 3. Look in user home dir
+    else:
+        user_home = expanduser('~')
+        config_root = os.path.join(user_home, '.' + app_conf_dir)
+
+    # 4. Fall back to /etc, or die.
+    if not os.path.isdir( config_root ):
+        etc_conf_dir = os.path.join('/etc', app_conf_dir)
+        if os.path.isdir(etc_conf_dir):
+            config_root = etc_conf_dir
+        else:
+            raise "Could not find config dir"
+
+    return config_root
+
+def main(options, args):
+
+    bot = Hackabot(options)
     bot.start()
 
 if __name__ == "__main__":
-    main()
+    import pdb; pdb.set_trace()
+    # create the option parser
+    parser = OptionParser()
+    parser.add_option( "-D", "--no-daemon", default=False, dest="no_daemon",  
+                       help="force hackabot to not become a daemon")
+    parser.add_option( "-c", "--config", default=None, dest="config" )
+
+    (options, args) = parser.parse_args()
+
+    if not options.config:
+        config_root = find_config_root('hackabot', 'HACKABOT_CONF_DIR')
+        options.config = os.path.join(config_root, 'hackabot.llsd.xml')
+        if not os.path.isfile(options.config):
+            raise "Could not find hackabot config file (%s)" % options.config
+
+    sys.exit(main(options,args))    

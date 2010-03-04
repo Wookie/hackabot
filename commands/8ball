@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Get the answers to life!
+# !8ball
+##HACKABOT_HELP##
+
+import string
+import sys
+import os
+import re
+from command import Command
+
+class Eightball(Command):
+    """
+    Emulates the 8-ball toy
+    """
+
+    answers = (
+      """     ___
+            /   \\
+           /     \\
+          / IT IS \\
+         / CERTAIN \\
+        /           \\
+        \\___________/
+        """,
+      """     ___
+            /   \\
+           /     \\
+          /  MY   \\
+         / SOURCES \\
+        /  SAY  NO  \\
+        \\___________/
+        """,
+      """     ___
+            /   \\
+           /     \\
+          /  MY   \\
+         / SOURCES \\
+        /  SAY YES  \\
+        \\___________/
+        """,
+      """ ___________
+        /           \\
+        \\   MOST    /
+         \\ LIKELY  /
+          \\  NOT  /
+           \\     /
+            \\___/
+        """,
+      """ ___________
+        /           \\
+        \\           /
+         \\ UMMM..  /
+          \\   NO  /
+           \\     /
+            \\___/
+        """,
+      """ ___________
+        /           \\
+        \\  WITHOUT  /
+         \\    A    /
+          \\ DOUBT /
+           \\     /
+            \\___/
+        """,
+      """     ___
+            /   \\
+           /     \\
+          / VERY  \\
+         /         \\
+        /  DOUBTFUL \\
+        \\___________/
+        """,
+      """     ___
+            /   \\
+           /     \\
+          /       \\
+         /    NO   \\
+        /           \\
+        \\___________/
+        """,
+      """     ___
+            /   \\
+           /     \\
+          /       \\
+         /   YES   \\
+        /           \\
+        \\___________/
+        """,
+      """ ___________
+        /           \\
+        \\     I     /
+         \\  DON'T  /
+          \\ CARE  /
+           \\     /
+            \\___/
+        """,
+      """ ___________
+        /           \\
+        \\           /
+         \\  HECK   /
+          \\  YEA! /
+           \\     /
+            \\___/
+        """)
+
+    def __init__(self):
+        super(Eightball, self).__init__('8ball')
+
+    def main(self):
+
+        print >> sys.stdout, "sendnext"
+        print >> sys.stdout, Eightball.answers[int(rand(len(Eightball.answers)))]
+        
+if __name__ == "__main__":
+    cmd = Eightball()
+    sys.exit(cmd.main())

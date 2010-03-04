@@ -9,9 +9,9 @@ import string
 import sys
 import os
 import re
-from command import Command
+from hackabot import *
 
-class Admin(Command):
+class Admin(hackabot.Command):
     """
     Runs administrative tasks
     """
@@ -21,22 +21,13 @@ class Admin(Command):
 
     def main(self):
         
-        # get the admin command
-        command_line = self._get_command_line()
-
         # get the command and arguments
-        c = re.match(r'(\S*)\s*(.*)', command_line)
+        c = re.match(r'(\S*)\s*(.*)', self._msg)
         cmd = c.group(1)
         arg = c.group(2)
 
         if cmd.lower() in ('quit', 'nick', 'join', 'part'):
             print >> sys.stdout, "%s %s" % (cmd, arg)
-
-    def _get_command_line(self):
-        for line in sys.stdin.readlines():
-            if re.match(r'msg\s*(.*)', line):
-                c = re.match(r'msg\s*(.*)', line)
-                return c.group(1)
 
 if __name__ == "__main__":
     cmd = Admin()

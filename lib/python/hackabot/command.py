@@ -9,6 +9,7 @@ import os
 import re
 import MySQLdb
 from llbase import llsd
+from hackabot.config import Config
 
 
 class Command(object):
@@ -18,23 +19,8 @@ class Command(object):
 
     def __init__(self, command):
 
-        # try to find where the hackabot config file is
-        config_dir = os.getenv('HACKABOT_DIR')
-        if config_dir == None:
-            sys.stderr.write("HACKABOT_DIR is undefined\n")
-            sys.exit(1)
-
-        config_file = os.getenv('HACKABOT_CFG')
-        if config_file == None:
-            sys.stderr.write("HACKABOT_CFG is undefined\n")
-            sys.exit(1)
-
-        # load the full hackabot config
-        config = os.path.join(config_dir, config_file)
-        print >> sys.stderr, '%s' % config
-        c = open(config, 'r')
-        self._config = llsd.parse_xml(c.read())
-        c.close()
+        # this loads up the config using the env vars to find the file
+        self._config = Config()
 
         # load the database config
         self._db = self._config['database']
@@ -60,10 +46,9 @@ class Command(object):
             elif re.match(r'host\s+(\S+)', line):
                 c = re.match(r'host\s+(\S+)', line)
                 self._host = c.group(1)
-            elif re.match(r'msg\s+(\S+)', line):
-                c = re.match(r'msg\s+(.+)', line)
-                if c:
-                    self._msg = c.group(1)
+            elif re.match(r'msg\s*(.*)', line):
+                c = re.match(r'msg\s*(.*)', line)
+                self._msg = c.group(1)
             elif re.match(r'to\s+(\S+)', line):
                 c = re.match(r'to\s+(\S+)', line)
                 self._to = c.group(1)
