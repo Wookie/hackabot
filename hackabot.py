@@ -51,9 +51,18 @@ class Config(object):
             print >> sys.stderr, 'Could not load hackabot config file'
 
         # load the configuration
-        c = open(config, 'r')
+        c = open(self._config_file, 'r')
         self._config = llsd.parse_xml(c.read())
         c.close()
+
+        # fix up defaults
+        self._set_defaults()
+
+    def get_config_filename(self):
+        return self._config_file
+
+    def has_key(self, key):
+        return self._config.has_key(key)
 
     def _set_defaults(self):
         """
@@ -79,21 +88,22 @@ class Config(object):
         if not self._config.has_key('cmdconfig'):
             self._config['cmdconfig'] = Config.DEFAULT_CMDCONFIG
 
-    def __get__(self, key):
+    def __getitem__(self, key):
         if self._config.has_key(key):
             return self._config[key]
 
         return None
 
-    def __set__(self, key, value):
+    def __setitem__(self, key, value):
         self._config[key] = value
 
 
 class Hackabot(SingleServerIRCBot):
 
-    def __init__(self, file):
+    def __init__(self, options):
+        #import pdb; pdb.set_trace()
         # load up the config
-        self._config = Config(os.path.realpath(file))
+        self._config = Config(os.path.realpath(options.config))
       
         # set up the environment
         self._init_env()
@@ -112,7 +122,7 @@ class Hackabot(SingleServerIRCBot):
             self._config['name'],
             self._config['reconnect'] )
 
-    def _init_env(self, file):
+    def _init_env(self):
         """
         this sets up environment variables that the command/hook
         scripts/executables can use.
@@ -123,11 +133,12 @@ class Hackabot(SingleServerIRCBot):
         etc_dir = self._config['etc']
         cmd_dir = self._config['commands']
         socket_file = self._config['socket']
+        config_file = self._config.get_config_filename()
 
         self.msg("Setting up irc object for %s..." % server)
 
         # specify the config file hackabot is using
-        os.putenv("HACKABOT_CFG", file)
+        os.putenv("HACKABOT_CFG", config_file)
 
         # the root hackabot dir
         os.putenv("HACKABOT_DIR", root_dir)
@@ -162,6 +173,7 @@ class Hackabot(SingleServerIRCBot):
         thread.start_new_thread(self.server,tuple())
 
         # send the automsg messages
+        import pdb; pdb.set_trace()
         for automsg in self._config['automsg']:
             self.msg('sending msg to %s' % automsg['to'])
             self.privmsg(automsg['to'], automsg['msg'])
@@ -535,29 +547,34 @@ class Hackabot(SingleServerIRCBot):
         print "hackabot:",txt
 
 def find_config_root(app_conf_dir, APP_CONF_DIR_ENV_VAR):
+    possible_paths = []
+
     # 1. Look in current working direction.
     if os.path.isdir(app_conf_dir):
-        return abspath(app_conf_dir)
+        possible_paths.append(abspath(app_conf_dir))
 
     # 2. Look for env var.
     if os.environ.has_key(APP_CONF_DIR_ENV_VAR) and \
            os.path.isdir(os.environ[APP_CONF_DIR_ENV_VAR]):
         config_root = os.environ[APP_CONF_DIR_ENV_VAR]
+        possible_paths.append(config_root)
 
     # 3. Look in user home dir
     else:
-        user_home = expanduser('~')
+        user_home = os.path.expanduser('~')
         config_root = os.path.join(user_home, '.' + app_conf_dir)
+        possible_paths.append(config_root)
 
     # 4. Fall back to /etc, or die.
     if not os.path.isdir( config_root ):
         etc_conf_dir = os.path.join('/etc', app_conf_dir)
         if os.path.isdir(etc_conf_dir):
             config_root = etc_conf_dir
+            possible_paths.append(config_root)
         else:
-            raise "Could not find config dir"
+            raise Exception("Could not find config dir")
 
-    return config_root
+    return possible_paths
 
 def main(options, args):
 
@@ -565,7 +582,7 @@ def main(options, args):
     bot.start()
 
 if __name__ == "__main__":
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     # create the option parser
     parser = OptionParser()
     parser.add_option( "-D", "--no-daemon", default=False, dest="no_daemon",  
@@ -575,9 +592,22 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     if not options.config:
-        config_root = find_config_root('hackabot', 'HACKABOT_CONF_DIR')
-        options.config = os.path.join(config_root, 'hackabot.llsd.xml')
-        if not os.path.isfile(options.config):
-            raise "Could not find hackabot config file (%s)" % options.config
+        possible_paths = find_config_root('hackabot', 'HACKABOT_CONF_DIR')
+        print 'Possible config paths: %s' % possible_paths
+        for p in possible_paths:
+            if os.path.isdir(p):
+                possible_config = os.path.join(p, 'hackabot.llsd.xml')
+                sys.stdout.write("Checking %s..." % possible_config)
+                if os.path.isfile(possible_config):
+                    print "OK"
+                    options.config = possible_config
+                else:
+                    print "Not there"
+            else:
+                print >> sys.stderr, "Config root check failed: %s" % p
+            sys.stdout.flush()
+            sys.stderr.flush()
+        if not options.config:
+            raise Exception("Could not find hackabot config file")
 
-    sys.exit(main(options,args))    
+    sys.exit(main(options,args))

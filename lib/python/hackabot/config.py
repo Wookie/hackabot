@@ -32,9 +32,12 @@ class Config(object):
             print >> sys.stderr, 'Could not load hackabot config file'
 
         # load the configuration
-        c = open(config, 'r')
+        c = open(self._config_file, 'r')
         self._config = llsd.parse_xml(c.read())
         c.close()
+
+        # fix up the defaults
+        self._set_defaults()
 
     def _set_defaults(self):
         """
