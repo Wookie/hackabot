@@ -9,7 +9,7 @@ import string
 import sys
 import os
 import random
-from command import *
+from hackabot.command import Command
 
 class CoinFlip(Command):
     """

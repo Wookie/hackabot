@@ -9,7 +9,7 @@ import string
 import sys
 import os
 import random
-from command import Command
+from hackabot.command import Command
 
 class OneDTwenty(Command):
     """

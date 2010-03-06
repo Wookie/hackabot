@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# List and get help for the available commands
+# !help [command name]
+##HACKABOT_HELP##
+
+import string
+import sys
+import os
+import re
+from hackabot import *
+
+class Help(hackabot.Command):
+    """
+    Displays help for commands
+    """
+
+    def __init__(self):
+        super(Help, self).__init__('help')
+
+    def main(self):
+        
+        # get the command and arguments
+        c = re.match(r'(\S*)\s*(.*)', self._msg)
+        cmd = c.group(1)
+        arg = c.group(2)
+
+        if cmd.lower() == 'pubmsg':
+            print >> sys.stdout, '%s, %s' % (cmd, arg)
+        elif cmd.lower() == 'privmsg':
+            print >> sys.stdout, '%s, %s' % (cmd, arg)
+
+if __name__ == "__main__":
+    cmd = Help()
+    sys.exit(cmd.main())

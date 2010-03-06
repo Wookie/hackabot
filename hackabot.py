@@ -101,7 +101,6 @@ class Config(object):
 class Hackabot(SingleServerIRCBot):
 
     def __init__(self, options):
-        #import pdb; pdb.set_trace()
         # load up the config
         self._config = Config(os.path.realpath(options.config))
       
@@ -173,7 +172,6 @@ class Hackabot(SingleServerIRCBot):
         thread.start_new_thread(self.server,tuple())
 
         # send the automsg messages
-        import pdb; pdb.set_trace()
         for automsg in self._config['automsg']:
             self.msg('sending msg to %s' % automsg['to'])
             self.privmsg(automsg['to'], automsg['msg'])
@@ -345,26 +343,27 @@ class Hackabot(SingleServerIRCBot):
         # open a new process with I/O pipes
         #write,read = os.popen2(cmd)
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             stdout=subprocess.PIPE, close_fds = True)
+       
+        (child_stdin, child_stdout) = (p.stdin, p.stdout)
         
         # write the command parameters to the command handler's STDIN
-        print >> p.stdin, 'type %s' % event.eventtype()
+        print >> child_stdin, 'type %s' % event.eventtype()
         if isinstance(event.source(), str):
-            print >> p.stdin, 'nick %s' % nm_to_n(event.source())
+            print >> child_stdin, 'nick %s' % nm_to_n(event.source())
             if event.source().find('!') > 0:
-                print >> p.stdin, 'user %s' % nm_to_u(event.source())
+                print >> child_stdin, 'user %s' % nm_to_u(event.source())
             if event.source().find('@') > 0:
-                print >> p.stdin, 'host %s' % nm_to_u(event.source())
+                print >> child_stdin, 'host %s' % nm_to_u(event.source())
         if isinstance(to, str):
-            print >> p.stdin, 'to %s' % to
+            print >> child_stdin, 'to %s' % to
         if isinstance(msg, str):
-            print >> p.stdin, 'msg %s' % msg
-        print >> p.stdin, 'currentnick %s' % self.connection.get_nickname()
-        p.stdin.close()
+            print >> child_stdin, 'msg %s' % msg
+        print >> child_stdin, 'currentnick %s' % self.connection.get_nickname()
 
         # process the output from the command handler
-        ret = self.process(p.stdout, to, event)
-        p.stdout.close()
+        ret = self.process(child_stdout, to, event)
+        child_stdout.close()
 
         return ret
     
@@ -582,7 +581,6 @@ def main(options, args):
     bot.start()
 
 if __name__ == "__main__":
-    #import pdb; pdb.set_trace()
     # create the option parser
     parser = OptionParser()
     parser.add_option( "-D", "--no-daemon", default=False, dest="no_daemon",  

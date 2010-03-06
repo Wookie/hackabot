@@ -8,7 +8,7 @@
 import string
 import sys
 import os
-from command import *
+from hackabot.command import Command
 
 class PTest(Command):
     """

@@ -9,9 +9,9 @@ import string
 import sys
 import os
 import re
-from hackabot import *
+from hackabot.command import Command
 
-class Admin(hackabot.Command):
+class Admin(Command):
     """
     Runs administrative tasks
     """

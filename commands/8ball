@@ -9,7 +9,7 @@ import string
 import sys
 import os
 import re
-from command import Command
+from hackabot.command import *
 
 class Eightball(Command):
     """

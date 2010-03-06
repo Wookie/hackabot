@@ -3,6 +3,7 @@ This is a wrapper class around the hackabot config file.  It handles loading
 the config and setting up default values so that both hackabot and commands
 alike see the config in the same way
 '''
+import os
 import sys
 from llbase import llsd
 
@@ -63,13 +64,16 @@ class Config(object):
         if not self._config.has_key('cmdconfig'):
             self._config['cmdconfig'] = Config.DEFAULT_CMDCONFIG
 
-    def __get__(self, key):
+    def has_key(self, key):
+        return self._config.has_key(key)
+
+    def __getitem__(self, key):
         if self._config.has_key(key):
             return self._config[key]
 
         return None
 
-    def __set__(self, key, value):
+    def __setitem__(self, key, value):
         self._config[key] = value
 
 
