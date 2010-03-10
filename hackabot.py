@@ -13,6 +13,7 @@ processes or threads. In short, Perl frickin sucks at sharing data between
 threads. Hopefully python will prove itself to be much better.
 """
 
+import logging
 import os
 import re
 import socket
@@ -25,6 +26,8 @@ from ircbot import SingleServerIRCBot
 from irclib import nm_to_n, nm_to_u, nm_to_h, Event
 from llbase import llsd
 from optparse import OptionParser
+
+HACKABOT_CONF_FILE = 'hackabot.llsd.xml'
 
 class Config(object):
     """
@@ -348,6 +351,7 @@ class Hackabot(SingleServerIRCBot):
         (child_stdin, child_stdout) = (p.stdin, p.stdout)
         
         # write the command parameters to the command handler's STDIN
+        self.msg('feeding msg details to %s' % cmd)
         print >> child_stdin, 'type %s' % event.eventtype()
         if isinstance(event.source(), str):
             print >> child_stdin, 'nick %s' % nm_to_n(event.source())
@@ -362,6 +366,7 @@ class Hackabot(SingleServerIRCBot):
         print >> child_stdin, 'currentnick %s' % self.connection.get_nickname()
 
         # process the output from the command handler
+        self.msg('processing response from %s' % cmd)
         ret = self.process(child_stdout, to, event)
         child_stdout.close()
 
@@ -371,9 +376,11 @@ class Hackabot(SingleServerIRCBot):
         ret = "ok"
         sendnext = False
         rw = (sockfile.mode != 'r')
+        self.msg('pipe in rw mode: %s' % rw)
 
         for line in sockfile:
             line = line.rstrip("\n")
+            self.msg(line)
 
             if to and sendnext:
                 self.privmsg(to, line)
@@ -594,11 +601,11 @@ if __name__ == "__main__":
         print 'Possible config paths: %s' % possible_paths
         for p in possible_paths:
             if os.path.isdir(p):
-                possible_config = os.path.join(p, 'hackabot.llsd.xml')
+                possible_config = os.path.join(p, HACKABOT_CONF_FILE)
                 sys.stdout.write("Checking %s..." % possible_config)
                 if os.path.isfile(possible_config):
                     print "OK"
-                    options.config = possible_config
+                    options.config = p
                 else:
                     print "Not there"
             else:
