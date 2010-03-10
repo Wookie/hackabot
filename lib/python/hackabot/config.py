@@ -6,7 +6,7 @@ alike see the config in the same way
 import os
 import sys
 from llbase import llsd
-
+from hackabot.log import Log
 
 class Config(object):
     """
@@ -22,6 +22,9 @@ class Config(object):
 
     def __init__(self, config_file = None):
 
+        # get a handle to the log
+        self._log = Log()
+
         # figure out the path to the config file
         if config_file:
             self._config_file = config_file
@@ -30,7 +33,7 @@ class Config(object):
             self._config_file = os.getenv('HACKABOT_CFG')
         
         if self._config_file == None:
-            print >> sys.stderr, 'Could not load hackabot config file'
+            log.critical('Could not load hackabot config file')
 
         # load the configuration
         c = open(self._config_file, 'r')
