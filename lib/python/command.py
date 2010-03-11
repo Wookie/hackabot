@@ -3,13 +3,16 @@ This is the base class for a hackabot command.  It handles automatically
 loading the hackabot configuration, parsing the inputs from hackabot,
 and helps with establishing database connections.
 '''
-import string
-import sys
+
+import MySQLdb
 import os
 import re
-import MySQLdb
-import syslog
-from llbase import llsd
+import sqlite3
+import string
+import sys
+
+# import the other hackabot utility classes
+from acl import Acl
 from log import Log
 from config import Config
 
@@ -23,10 +26,11 @@ class Command(object):
         # this gets a handle to the logging facility
         self._log = Log()
 
-        self._log.debug('Command.__init__()')
-
         # this loads up the config specified in env vars
         self._config = Config()
+
+        # this loads up the acl specified in env vars
+        self._acl = Acl()
 
         # load the database config
         self._db = self._config['database']
@@ -41,7 +45,8 @@ class Command(object):
         self._to = None
         self._log.debug('reading lines from dispatcher')
         for line in sys.stdin.readlines():
-            self._log.debug('%s' % line)
+            line = line.rstrip("\n")
+            self._log.debug(line)
             if re.match(r'type\s+(\S+)', line):
                 c = re.match(r'type\s+(\S+)', line)
                 self._event_type = c.group(1)
@@ -67,6 +72,20 @@ class Command(object):
         self._log.debug('host: %s' % self._host)
         self._log.debug('msg: %s' % self._msg)
         self._log.debug('to: %s' % self._to)
+
+    def __del__(self):
+        """
+        make sure that our pipes are closed
+        """
+        sys.stdin.close()
+        sys.stdout.close()
+        sys.stderr.close()
+
+    def _get_log(self):
+        return self._log
+
+    def _get_acl(self):
+        return self._acl
 
     def _get_database_connection(self):
         """

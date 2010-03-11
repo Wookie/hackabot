@@ -1,15 +1,16 @@
 #!/usr/bin/python
 
 ##HACKABOT_HELP##
-# Sample command that uses new hackabot python command tools
-# !ptest
+# Flips a coin and reports heads or tails
+# !coinflip
 ##HACKABOT_HELP##
 
-import string
-import sys
 import os
 import random
-from hackabot.command import Command
+import string
+import sys
+
+from command import Command
 
 class CoinFlip(Command):
     """

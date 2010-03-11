@@ -5,13 +5,14 @@
 # !help [command name]
 ##HACKABOT_HELP##
 
-import string
-import sys
 import os
 import re
-from hackabot import *
+import string
+import sys
 
-class Help(hackabot.Command):
+from command import Command
+
+class Help(Command):
     """
     Displays help for commands
     """
@@ -20,16 +21,10 @@ class Help(hackabot.Command):
         super(Help, self).__init__('help')
 
     def main(self):
-        
-        # get the command and arguments
-        c = re.match(r'(\S*)\s*(.*)', self._msg)
-        cmd = c.group(1)
-        arg = c.group(2)
 
-        if cmd.lower() == 'pubmsg':
-            print >> sys.stdout, '%s, %s' % (cmd, arg)
-        elif cmd.lower() == 'privmsg':
-            print >> sys.stdout, '%s, %s' % (cmd, arg)
+        # echo the argument back to the current 'to' target 
+        print >> sys.stdout, 'sendnext'
+        print >> sys.stdout, '%s' % self._msg
 
 if __name__ == "__main__":
     cmd = Help()

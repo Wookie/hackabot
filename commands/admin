@@ -5,11 +5,12 @@
 # !admin join #chan | part #chan | nick name | quit msg
 ##HACKABOT_HELP##
 
-import string
-import sys
 import os
 import re
-from hackabot.command import Command
+import string
+import sys
+
+from command import Command
 
 class Admin(Command):
     """

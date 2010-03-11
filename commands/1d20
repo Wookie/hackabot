@@ -5,11 +5,13 @@
 # !1d20
 ##HACKABOT_HELP##
 
-import string
-import sys
 import os
 import random
-from hackabot.command import Command
+import string
+import sys
+
+# import hackabot utility classes
+from command import Command
 
 class OneDTwenty(Command):
     """

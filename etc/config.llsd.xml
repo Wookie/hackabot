@@ -38,7 +38,7 @@
 
     <!-- the nick to use when connecting -->
     <key>nick</key>
-    <string>cgdbot</string>
+    <string>cgd</string>
 
     <!-- the server to connect to -->
     <key>server</key>
@@ -132,7 +132,7 @@
         -->
         <map>
             <key>chan</key>
-            <string>#cgd</string>
+            <string>#classicgamedev</string>
             <key>msg</key>
             <string>yay!! it works</string>
         </map>

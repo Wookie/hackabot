@@ -9,6 +9,20 @@
                 <key>action</key>
                 <string>allow</string>
             </map>
+
+            <!-- deny access to 8ball -->
+            <!--
+            <map>
+                <key>command</key>
+                <string>8ball</string>
+                <key>access</key>
+                <string>public</string>
+                <key>msg</key>
+                <string>8ball is broken</string>
+                <key>action</key>
+                <string>deny</string>
+            </map>
+            -->
         </array>
     </map>
 </llsd>
