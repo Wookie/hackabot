@@ -340,11 +340,6 @@ class Hackabot(SingleServerIRCBot):
         return self.do_prog(event, to, cmd_exe, msg, cmd)
     
     def do_prog(self, event, to, cmd_exe, msg, cmd):
-        self._log.debug('event: %s' % str(event))
-        self._log.debug('to: %s' % to)
-        self._log.debug('cmd: %s' % cmd)
-        self._log.debug('msg: %s' % msg)
-
         # make sure we have rights to execute the command handler
         if not os.access(cmd_exe,os.X_OK):
             return
@@ -356,12 +351,12 @@ class Hackabot(SingleServerIRCBot):
             access = 'private'
 
         # run an acl rule check
-        (action, msg) = self._acl.check_action(to, cmd, nm_to_n(event.source()), access)
+        (action, action_msg) = self._acl.check_action(to, cmd, nm_to_n(event.source()), access)
 
         # if they are denied, send them the msg if any
         if action.lower() == 'deny':
-            if len(msg) > 0:
-                self.privmsg(to, msg)
+            if len(action_msg) > 0:
+                self.privmsg(to, action_msg)
             return
        
         # open a new process with I/O pipes
@@ -370,7 +365,6 @@ class Hackabot(SingleServerIRCBot):
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
        
         # write the command parameters to the command handler's STDIN
-        self._log.debug('feeding msg details to %s' % cmd_exe)
         print >> p.stdin, 'type %s' % event.eventtype()
         if isinstance(event.source(), str):
             print >> p.stdin, 'nick %s' % nm_to_n(event.source())
@@ -389,17 +383,16 @@ class Hackabot(SingleServerIRCBot):
         p.stdin.close()
 
         # process the output from the command handler
-        self._log.debug('processing response from %s' % cmd_exe)
         ret = self.process(p.stdout, to, event)
         p.stdout.close()
 
         # process the error output from the command handler
-        self._log.debug('processing stderr from %s' % cmd_exe)
         for err in p.stderr.readlines():
             err = err.rstrip('\n')
             self._log.warn(err)
         p.stderr.close()
-        self._log.debug('done running cmd %s' % cmd_exe)
+        
+        self._log.debug('done executing cmd %s' % cmd_exe)
 
         return ret
     
@@ -407,13 +400,11 @@ class Hackabot(SingleServerIRCBot):
         ret = "ok"
         sendnext = False
         rw = (sockfile.mode != 'r')
-        self._log.debug('pipe in rw mode: %s' % rw)
 
-        self._log.debug('processing output from the command')
         for line in sockfile.readlines():
             line = line.rstrip("\n")
 
-            self._log.debug(line)
+            self._log.debug('<<< %s' % line)
 
             if to and sendnext:
                 self.privmsg(to, line)

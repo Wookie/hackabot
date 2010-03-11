@@ -184,11 +184,10 @@ class Acl(object):
             key = '%s-%s-%s-%s' % (channel[channel_idx], command[command_idx],
                                    person[person_idx], access[access_idx])
 
-            self._log.debug('trying %s' % key)
             if self._rules.has_key(key):
                 action = self._rules[key]['action']
                 msg = self._rules[key]['msg']
-                self._log.debug('matched -- action: %s -- msg: %s' % (action, msg))
+                self._log.debug('%s => action: %s -- msg: %s' % (key, action, msg))
         
         return (action, msg)
 

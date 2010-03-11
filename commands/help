@@ -5,6 +5,7 @@
 # !help [command name]
 ##HACKABOT_HELP##
 
+import glob
 import os
 import re
 import string
@@ -22,9 +23,69 @@ class Help(Command):
 
     def main(self):
 
-        # echo the argument back to the current 'to' target 
+        if len(self._msg) > 0:
+            self._show_help(self._msg)
+        else:
+            self._show_commands()
+
+    def _get_allowed_commands(self):
+        # get the hackabot commands dir
+        cmd_dir = os.getenv('HACKABOT_CMD')
+
+        # build a list of commands with full paths
+        cmds = glob.glob(os.path.join(cmd_dir, "*"))
+
+        # now scan that list checking acls to build
+        # a list of commands that the user can access
+        commands = []
+        for cmd in cmds:
+            c = os.path.split(cmd)[1]
+
+            # test the acl
+            to = '*'
+            if self._event_type.lower() == 'pubmsg':
+                access = 'public'
+                to = self._to
+            else:
+                access = 'private'
+            (action, _) = self._acl.check_action(to, c, self._nick, access)
+            if action == 'allow':
+                commands.append(c)
+
+        return commands
+
+    def _show_help(self, cmd):
+        # get the list of commands the user is allowed to access
+        commands = self._get_allowed_commands()
+
+        if cmd in commands:
+            # get the hackabot commands dir
+            cmd_dir = os.getenv('HACKABOT_CMD')
+
+            # get full path to the command
+            cmd_path = os.path.join(cmd_dir, cmd)
+
+            cmdf = open(cmd_path, 'r')
+            in_help = False
+            for line in cmdf.readlines():
+                if re.match(r'^##HACKABOT_HELP##.*$', line):
+                    if in_help:
+                        return
+                    else:
+                        in_help = True
+                        continue
+                elif in_help:
+                    c = re.match(r'^#\s*(.*)', line)
+                    print >> sys.stdout, 'send %s' % c.group(1)
+
+    def _show_commands(self):
+        
+        # get a list of commands the user is allowed to access
+        commands = self._get_allowed_commands()
+
+        # output the list
         print >> sys.stdout, 'sendnext'
-        print >> sys.stdout, '%s' % self._msg
+        print >> sys.stdout, ' '.join(commands)
 
 if __name__ == "__main__":
     cmd = Help()

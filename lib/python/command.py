@@ -43,10 +43,8 @@ class Command(object):
         self._host = None
         self._msg = None
         self._to = None
-        self._log.debug('reading lines from dispatcher')
         for line in sys.stdin.readlines():
             line = line.rstrip("\n")
-            self._log.debug(line)
             if re.match(r'type\s+(\S+)', line):
                 c = re.match(r'type\s+(\S+)', line)
                 self._event_type = c.group(1)
@@ -65,13 +63,17 @@ class Command(object):
             elif re.match(r'to\s+(\S+)', line):
                 c = re.match(r'to\s+(\S+)', line)
                 self._to = c.group(1)
+            elif re.match(r'currentnick\s+(\S+)', line):
+                c = re.match(r'currentnick\s+(\S+)', line)
+                self._current_nick = c.group(1)
 
-        self._log.debug('event type: %s' % self._event_type)
-        self._log.debug('nick: %s' % self._nick)
-        self._log.debug('user: %s' % self._user)
-        self._log.debug('host: %s' % self._host)
-        self._log.debug('msg: %s' % self._msg)
-        self._log.debug('to: %s' % self._to)
+        self._log.debug('>>> event type: %s' % self._event_type)
+        self._log.debug('>>> nick: %s' % self._nick)
+        self._log.debug('>>> user: %s' % self._user)
+        self._log.debug('>>> host: %s' % self._host)
+        self._log.debug('>>> msg: %s' % self._msg)
+        self._log.debug('>>> to: %s' % self._to)
+        self._log.debug('>>> currentnick: %s' % self._current_nick)
 
     def __del__(self):
         """
