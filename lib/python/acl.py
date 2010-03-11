@@ -4,7 +4,7 @@ This is a wrapper class around the hackabot acl file.
 import os
 import sys
 from llbase import llsd
-from hackabot.log import Log
+from log import Log
 
 class Acl(object):
     """

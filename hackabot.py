@@ -26,9 +26,9 @@ from ircbot import SingleServerIRCBot
 from irclib import nm_to_n, nm_to_u, nm_to_h, Event
 from llbase import llsd
 from optparse import OptionParser
-from hackabot.log import Log
-from hackabot.config import Config
-from hackabot.acl import Acl
+from log import Log
+from config import Config
+from acl import Acl
 
 # this is the directory name that holds the hackabot config files
 # hackabot will first search the local directory for a directory

@@ -9,7 +9,7 @@ import os
 import re
 import MySQLdb
 from llbase import llsd
-from hackabot.config import Config
+from config import Config
 
 
 class Command(object):

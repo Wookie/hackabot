@@ -6,7 +6,7 @@ alike see the config in the same way
 import os
 import sys
 from llbase import llsd
-from hackabot.log import Log
+from log import Log
 
 class Config(object):
     """
