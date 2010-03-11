@@ -8,7 +8,9 @@ import sys
 import os
 import re
 import MySQLdb
+import syslog
 from llbase import llsd
+from log import Log
 from config import Config
 
 
@@ -18,9 +20,10 @@ class Command(object):
     """
 
     def __init__(self, command):
-
         # this gets a handle to the logging facility
         self._log = Log()
+
+        self._log.debug('Command.__init__()')
 
         # this loads up the config specified in env vars
         self._config = Config()
@@ -36,7 +39,9 @@ class Command(object):
         self._host = None
         self._msg = None
         self._to = None
+        self._log.debug('reading lines from dispatcher')
         for line in sys.stdin.readlines():
+            self._log.debug('%s' % line)
             if re.match(r'type\s+(\S+)', line):
                 c = re.match(r'type\s+(\S+)', line)
                 self._event_type = c.group(1)
@@ -55,6 +60,13 @@ class Command(object):
             elif re.match(r'to\s+(\S+)', line):
                 c = re.match(r'to\s+(\S+)', line)
                 self._to = c.group(1)
+
+        self._log.debug('event type: %s' % self._event_type)
+        self._log.debug('nick: %s' % self._nick)
+        self._log.debug('user: %s' % self._user)
+        self._log.debug('host: %s' % self._host)
+        self._log.debug('msg: %s' % self._msg)
+        self._log.debug('to: %s' % self._to)
 
     def _get_database_connection(self):
         """

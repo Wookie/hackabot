@@ -9,7 +9,8 @@ import string
 import sys
 import os
 import re
-from hackabot.command import *
+from log import Log
+from command import Command
 
 class Eightball(Command):
     """
@@ -108,11 +109,15 @@ class Eightball(Command):
 
     def __init__(self):
         super(Eightball, self).__init__('8ball')
+        self._log = Log()
 
     def main(self):
 
+        self._log.debug('8ball running')
         print >> sys.stdout, "sendnext"
         print >> sys.stdout, Eightball.answers[int(rand(len(Eightball.answers)))]
+        sys.stdout.flush()
+        self._log.debug('8ball done')
         
 if __name__ == "__main__":
     cmd = Eightball()

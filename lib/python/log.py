@@ -29,7 +29,7 @@ class Log(object):
                 self._config_file = logging_config_file
             else:
                 # get the path to the config file
-                self._config_file = os.getenv('HACKABOT_LOGGING_CFG')
+                self._config_file = os.getenv('HACKABOT_LOG')
 
             if self._config_file is None:
                 raise Exception('Could not load the hackabot logging config file')
