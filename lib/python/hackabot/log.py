@@ -2,9 +2,18 @@
 singleton wrapper around logging.
 '''
 import os
+import sys
 import logging
 import logging.config
 import logging.handlers
+
+#HACK: fix up the logging namespace so that SysLogHandler works
+# this is necessary because logging.config.fileConfig() uses
+# eval to create instances of objects with the logging namespace
+# as the globals.  By default, only the StreamHandler and
+# MemoryHandler classes are in the logging namespace so those
+# are the only handler types that can be used from a conf file.
+logging.SysLogHandler = logging.handlers.SysLogHandler
 
 class Log(object):
 
@@ -16,17 +25,19 @@ class Log(object):
         def __init__(self, logging_config_file = None):
 
             # figure out the path to the config file
-            if config_file:
+            if logging_config_file:
                 self._config_file = logging_config_file
             else:
                 # get the path to the config file
                 self._config_file = os.getenv('HACKABOT_LOGGING_CFG')
 
-            if self._config_file = None:
-                print >> sys.stderr, 'Could not load the hackabot logging config file'
+            if self._config_file is None:
+                raise Exception('Could not load the hackabot logging config file')
+
+            self._config = open(self._config_file, 'r')
 
             # set up the logging facility
-            logging.config.fileConfig(self._config_file)
+            logging.config.fileConfig(self._config)
 
             # get our logging wrapper
             self._logger = logging.getLogger()
@@ -49,7 +60,6 @@ class Log(object):
 
     # storage for the instance reference
     __instance = None
-
 
     def __init__(self, logging_config_file = None):
         '''

@@ -1,0 +1,166 @@
+<?xml version="1.0" ?>
+<llsd>
+<map>
+    <!-- each setting can have the following fields:
+
+            channel: <channel name>
+            command: <command name>
+            person: <person nick>
+            access: <public or private>
+            action: <deny or allow>
+            msg: <message to send in response>
+
+         the only field that is requires is the action field. the rest have
+         default values that allow them to be applied to the acl structure.
+         for instance, if no channel is specified, the rule applies to all
+         channels.  if no command is specified, the rule applies to all 
+         commands.  if no person is specified, the rule applies to all nicks.
+         if no access is specified, the rule applies to both public and private
+         messages.  if no msg is specified no msg will be sent in response.
+
+         the fields channel, command, and person can all have a single value
+         or a array of values, thus allowing you to apply a rule to multiple
+         channels/commands/persons at the same time.
+
+         rules are processed in order with later rules overriding earlier
+         rules.  it is best to start with generic rules and then gradually
+         get more and more specific.
+
+         all rule definitions are stored as map.  you can include rules from
+         another acl file by adding a string to the rules array in the right
+         place with the value being the name of the other acl file to include.
+    -->
+
+    <key>rules</key>
+    <array>
+
+        <!-- the first rule allows all commands by all people on all channels
+             with both public and private access -->
+        <map>
+            <key>action</key>
+            <string>allow</string>
+        </map>
+
+        <!-- this rule denies all private access by user 'brat' -->
+        <map>
+            <key>person</key>
+            <string>brat</string>
+            <key>action</key>
+            <string>deny</string>
+        </map>
+
+        <!-- this rule denies all public access on channel #stayquiet -->
+        <map>
+            <key>channel</key>
+            <string>#stayquiet</string>
+            <key>type</key>
+            <string>public</string>
+            <key>action</key>
+            <string>deny</string>
+        </map>
+
+        <!-- this rule then allows loudguy to have public access on #stayquiet -->
+        <map>
+            <key>channel</key>
+            <string>#stayquiet</string>
+            <key>person</key>
+            <string>loudguy</string>
+            <key>access</key>
+            <string>public</string>
+            <key>action</key>
+            <string>allow</string>
+        </map>
+
+        <!-- this rule denies all access in '#somecha' -->
+        <map>
+            <key>channel</key>
+            <string>#somechan</string>
+            <key>action</key>
+            <string>deny</string>
+            <key>msg</key>
+            <string>No access for you...</string>
+        </map>
+
+        <!-- this rules turns off all access to command 'somecommand' -->
+        <map>
+            <key>command</key>
+            <string>somecommand</string>
+            <key>action</key>
+            <string>deny</string>
+            <key>msg</key>
+            <string>Go away...</string>
+        </map>
+
+        <!-- this rule then allows 'coolguy' to have public access to
+             'somecommand' on channel #somechan -->
+        <map>
+            <key>channel</key>
+            <string>#somechan</string>
+            <key>command</key>
+            <string>somecommand</string>
+            <key>person</key>
+            <string>coolguy</string>
+            <key>access</key>
+            <string>public</string>
+            <key>action</key>
+            <string>allow</string>
+        </map>
+
+        <!-- this rule then allows 'coolguy' to have private access to
+             'somecommand' on all channels -->
+        <map>
+            <key>command</key>
+            <string>somecommand</string>
+            <key>person</key>
+            <string>coolguy</string>
+            <key>access</key>
+            <string>private</string>
+            <key>action</key>
+            <string>allow</string>
+        </map>
+
+        <!-- this rule allows 'someone' to have public and private
+             access to 'somecommand' on all channels -->
+        <map>
+            <key>command</key>
+            <string>somecommand</string>
+            <key>person</key>
+            <string>someone</string>
+            <key>action</key>
+            <string>allow</string>
+        </map>
+
+        <!-- this rule turns off all public access to cowsay in channel 
+             #cranky -->
+        <map>
+            <key>channel</key>
+            <string>#cranky</string>
+            <key>command</key>
+            <string>cowsay</string>
+            <key>access</key>
+            <string>public</string>
+            <key>action</key>
+            <string>deny</string>
+        </map>
+
+        <!-- then this rule allows 'someone' to have public access to 
+             cowsay in the channel #cranky -->
+        <map>
+            <key>channel</key>
+            <string>#cranky</string>
+            <key>command</key>
+            <string>cowsay</string>
+            <key>person</key>
+            <string>someone</string>
+            <key>access</key>
+            <string>public</string>
+            <key>action</key>
+            <string>allow</string>
+        </map>
+
+        <!-- this includes the acl rules from the file moreacls.llsd.xml -->
+        <!-- <string>moreacls.llsd.xml</string> -->
+
+    </array>
+</map>
+</llsd>

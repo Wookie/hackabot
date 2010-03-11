@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<llsd>
+    <map>
+        <key>rules</key>
+        <array>
+            <!-- allow public and private access to all commands on all
+                 channesl by all people -->
+            <map>
+                <key>action</key>
+                <string>allow</string>
+            </map>
+        </array>
+    </map>
+</llsd>

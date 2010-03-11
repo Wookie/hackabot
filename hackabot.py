@@ -26,14 +26,48 @@ from ircbot import SingleServerIRCBot
 from irclib import nm_to_n, nm_to_u, nm_to_h, Event
 from llbase import llsd
 from optparse import OptionParser
+from hackabot.log import Log
+from hackabot.config import Config
+from hackabot.acl import Acl
 
-HACKABOT_CONF_FILE = 'hackabot.llsd.xml'
+# this is the directory name that holds the hackabot config files
+# hackabot will first search the local directory for a directory
+# with the name, then it will check for the environment variable,
+# then it will look for a dot directory in the current user's home 
+# directory and lastly it will search the /etc directory for a 
+# directory with the given name.
+HACKABOT_CONF_DIR = 'hackabot'
+
+# this it the environment variable that hackabot will check as well
+HACKABOT_CONF_DIR_ENV_VAR = 'HACKABOT_CONF_DIR'
+
+# this is the name of the hackabot config file
+HACKABOT_CONF_FILE = 'config.llsd.xml'
+
+# this is the name of the hackabot ACL file
+HACKABOT_ACL_FILE = 'acl.llsd.xml'
+
+# this is the name of the hackabot logging config file
+HACKABOT_LOG_FILE = 'logging.conf'
 
 class Hackabot(SingleServerIRCBot):
 
     def __init__(self, options):
+
+        # this is the calculated config directory
+        self._config_dir = os.path.realpath(options.config_dir)
+
+        # set up the logger
+        self._log_file = os.path.join(self._config_dir, HACKABOT_LOG_FILE)
+        self._log = Log(self._log_file)
+
         # load up the config
-        self._config = Config(os.path.realpath(options.config))
+        self._config_file = os.path.join(self._config_dir, HACKABOT_CONF_FILE)
+        self._config = Config(self._config_file)
+
+        # load up the acl
+        self._acl_file = os.path.join(self._config_dir, HACKABOT_ACL_FILE)
+        self._acl = Acl(self.acl_file)
       
         # set up the environment
         self._init_env()
@@ -45,6 +79,11 @@ class Hackabot(SingleServerIRCBot):
         if self._config.has_key('password'):
             server_info.append(self._config['password'])
 
+        # calculate absolute paths to essential files/dirs
+        self._socket_file = self._get_full_path(root_dir, self._config['socket'])
+        self._commands_dir = self._get_full_path(root_dir, self._config['commands'])
+        self._hooks_dir = self._get_full_path(root_dir, self._config['hooks'])
+ 
         # launch the irc bot
         SingleServerIRCBot.__init__(
             self, [server_info],
@@ -52,38 +91,66 @@ class Hackabot(SingleServerIRCBot):
             self._config['name'],
             self._config['reconnect'] )
 
+    def _get_full_path(self, root_dir, path):
+        """
+        this function looks to see if path starts with a /
+        if it does, then it just assumes path is an absolute
+        path and returns it.  if it doesn't start with a /
+        then it joins it with the root_dir and returns that.
+        """
+
+        if os.path.isabs(path):
+            return path
+
+        return os.path.join(root_dir, path)
+
     def _init_env(self):
         """
         this sets up environment variables that the command/hook
         scripts/executables can use.
         """
 
-        server = self._config['server']
+        # figure out what directory we live in 
         root_dir = self._config['directory']
-        etc_dir = self._config['etc']
-        cmd_dir = self._config['commands']
-        socket_file = self._config['socket']
-        config_file = self._config.get_config_filename()
+        if root_dir == '':
+            root_dir = os.path.dirname(os.path.realpath(__file__))
 
-        self.msg("Setting up irc object for %s..." % server)
+        # get the path to the various files commands will use
+       
+        # get the server info
+        server = self._config['server']
+
+        self._log.info("Setting up irc object for %s..." % server)
 
         # specify the config file hackabot is using
-        os.putenv("HACKABOT_CFG", config_file)
+        os.putenv("HACKABOT_CFG", self._config_file)
+
+        # specify the log config file that hackabot is using
+        os.putenv('HACKABOT_LOG', self._log_file)
+
+        # specify the acl file that hackabot is using
+        os.putenv('HACKABOT_ACL', self._acl_file)
 
         # the root hackabot dir
-        os.putenv("HACKABOT_DIR", root_dir)
+        os.putenv("HACKABOT_DIR", self._root_dir)
+
+        # specify the hackabot commands dir
+        os.putenv("HACKABOT_CMD", self._commands_dir) 
 
         # the hackabot etc dir
-        os.putenv("HACKABOT_ETC", os.path.join(root_dir, etc_dir))
-        os.putenv("HACKABOT_CMD", os.path.join(root_dir, cmd_dir))
-        os.putenv("HACKABOT_SOCK", os.path.join(root_dir, socket_file))
+        os.putenv("HACKABOT_ETC", self._config_dir)
+
+        # specify the command socket 
+        os.putenv("HACKABOT_SOCK", self._socket_file)
 
         # if they specify "pythonpath" in the config, then set the PYTHONPATH
         # env variable so that python scripts can import hackabot-local utility
         # cLasses.
         python_path = os.getenv('PYTHONPATH')
         for ppath in self._config['pythonpath']:
-            python_path = os.path.join(root_dir, ppath) + ':' + python_path
+            ppath = self._get_full_path(root_dir, ppath)
+            python_path = ppath + ':' + python_path
+            sys.path.insert(0, ppath)
 
         # set the new python path
         os.putenv("PYTHONPATH", python_path)
@@ -97,14 +164,14 @@ class Hackabot(SingleServerIRCBot):
 
         # snooze a bit
         time.sleep(1)
-        self.msg("Connected!")
+        self._log.info("Connected!")
 
         # kick off a new thread
         thread.start_new_thread(self.server,tuple())
 
         # send the automsg messages
         for automsg in self._config['automsg']:
-            self.msg('sending msg to %s' % automsg['to'])
+            self._log.info('sending msg to %s' % automsg['to'])
             self.privmsg(automsg['to'], automsg['msg'])
         
         # snooze a bit more
@@ -112,7 +179,7 @@ class Hackabot(SingleServerIRCBot):
 
         # join all of the autojoin channels
         for autojoin in self._config['autojoin']:
-            self.msg('joining %s' % autojoin['chan'])
+            self._log.info('joining %s' % autojoin['chan'])
             if autojoin.has_key('password'):
                 self.connection.join(autojoin['chan'], autojoin['password'])
             else:
@@ -158,7 +225,7 @@ class Hackabot(SingleServerIRCBot):
         if (self.channels.has_key(to)):
             self.channels[to].topic = event.arguments()[1]
         else:
-            self.msg("currenttopic: chan '"+to+"' not known")
+            self._log.info("currenttopic: chan '"+to+"' not known")
         thread.start_new_thread(self.do_hook,(event,to))
 
     def on_topicinfo(self, c, event):
@@ -167,7 +234,7 @@ class Hackabot(SingleServerIRCBot):
             self.channels[to].topic_nick = event.arguments()[1]
             self.channels[to].topic_time = event.arguments()[2]
         else:
-            self.msg("topicinfo: chan '"+to+"' not known")
+            self._log.info("topicinfo: chan '"+to+"' not known")
         thread.start_new_thread(self.do_hook,(event,to))
 
     def on_quit(self, c, event):
@@ -217,7 +284,7 @@ class Hackabot(SingleServerIRCBot):
         ret = "ok"
 
         # calculate the hook directory path
-        dir = os.path.join(self._config['directory'], self._config['hooks'], event.eventtype())
+        dir = os.path.join(self._hooks_dir, event.eventtype())
 
         # make sure we have read access to the dir
         if not os.access(dir,os.R_OK):
@@ -257,7 +324,7 @@ class Hackabot(SingleServerIRCBot):
             return
 
         # calculate the path to the command script
-        cmd = os.path.join(self._config['directory'], self._config['commands'], c.group(1))
+        cmd = os.path.join(self._commands_dir, self._config['commands'], c.group(1))
 
         # get the msg
         msg = c.group(2)
@@ -279,7 +346,7 @@ class Hackabot(SingleServerIRCBot):
         (child_stdin, child_stdout) = (p.stdin, p.stdout)
         
         # write the command parameters to the command handler's STDIN
-        self.msg('feeding msg details to %s' % cmd)
+        self._log.debug('feeding msg details to %s' % cmd)
         print >> child_stdin, 'type %s' % event.eventtype()
         if isinstance(event.source(), str):
             print >> child_stdin, 'nick %s' % nm_to_n(event.source())
@@ -294,7 +361,7 @@ class Hackabot(SingleServerIRCBot):
         print >> child_stdin, 'currentnick %s' % self.connection.get_nickname()
 
         # process the output from the command handler
-        self.msg('processing response from %s' % cmd)
+        self._log.debug('processing response from %s' % cmd)
         ret = self.process(child_stdout, to, event)
         child_stdout.close()
 
@@ -304,11 +371,11 @@ class Hackabot(SingleServerIRCBot):
         ret = "ok"
         sendnext = False
         rw = (sockfile.mode != 'r')
-        self.msg('pipe in rw mode: %s' % rw)
+        self._log.debug('pipe in rw mode: %s' % rw)
 
         for line in sockfile:
             line = line.rstrip("\n")
-            self.msg(line)
+            self._log.info(line)
 
             if to and sendnext:
                 self.privmsg(to, line)
@@ -361,7 +428,7 @@ class Hackabot(SingleServerIRCBot):
 
             c = re.match(r'quit\s*(.*)',line)
             if c:
-                self.msg("Exiting!")
+                self._log.info("Exiting!")
                 self.disconnect(c.group(1))
                 self.connection.execute_delayed(1,sys.exit)
                 continue
@@ -445,16 +512,16 @@ class Hackabot(SingleServerIRCBot):
                 ret = "noall"
                 continue
             
-            self.msg("Unknown request: "+line)
+            self._log.info("Unknown request: "+line)
 
         return ret
     
     def server(self):
 
         # calculate path to command socket
-        file = os.path.join(self._config['directory'], self._config['socket'])
+        file = self._socket_file
 
-        self.msg("Creating control socket: %s" % file)
+        self._log.info("Creating control socket: %s" % file)
         listen = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     
         # Ignore an unlink error since it might not exist
@@ -472,75 +539,71 @@ class Hackabot(SingleServerIRCBot):
         listen.close()
     
     def servclient(self, client):
-        #self.msg("New control socket connection.")
+        self._log.debug("New control socket connection.")
         self.process(client.makefile('r+'))
-        #self.msg("Closing control socket connection.")
+        self._log.debug("Closing control socket connection.")
         client.close()
 
     def msg(self, txt):
         print "hackabot:",txt
 
+
 def find_config_root(app_conf_dir, APP_CONF_DIR_ENV_VAR):
-    possible_paths = []
 
-    # 1. Look in current working direction.
+    # 1. Look in current working directorty
     if os.path.isdir(app_conf_dir):
-        possible_paths.append(abspath(app_conf_dir))
+        return abspath(app_conf_dir)
 
-    # 2. Look for env var.
+    # 2. Look for env var
     if os.environ.has_key(APP_CONF_DIR_ENV_VAR) and \
            os.path.isdir(os.environ[APP_CONF_DIR_ENV_VAR]):
         config_root = os.environ[APP_CONF_DIR_ENV_VAR]
-        possible_paths.append(config_root)
+        return config_root
 
-    # 3. Look in user home dir
+    # 3. Look in user home dir as a dot directory
     else:
         user_home = os.path.expanduser('~')
         config_root = os.path.join(user_home, '.' + app_conf_dir)
-        possible_paths.append(config_root)
+        return config_root
 
     # 4. Fall back to /etc, or die.
     if not os.path.isdir( config_root ):
         etc_conf_dir = os.path.join('/etc', app_conf_dir)
         if os.path.isdir(etc_conf_dir):
             config_root = etc_conf_dir
-            possible_paths.append(config_root)
-        else:
-            raise Exception("Could not find config dir")
+            return config_root
 
-    return possible_paths
+    return None
 
-def main(options, args):
 
-    bot = Hackabot(options)
-    bot.start()
+def main():
 
-if __name__ == "__main__":
     # create the option parser
     parser = OptionParser()
     parser.add_option( "-D", "--no-daemon", default=False, dest="no_daemon",  
                        help="force hackabot to not become a daemon")
-    parser.add_option( "-c", "--config", default=None, dest="config" )
+    parser.add_option( "-c", "--config-dir", default=None, dest="config_dir",
+                       help="specify the directory that contains the hackabot configs")
 
+    # parse the args and get the results
     (options, args) = parser.parse_args()
 
-    if not options.config:
-        possible_paths = find_config_root('hackabot', 'HACKABOT_CONF_DIR')
-        print 'Possible config paths: %s' % possible_paths
-        for p in possible_paths:
-            if os.path.isdir(p):
-                possible_config = os.path.join(p, HACKABOT_CONF_FILE)
-                sys.stdout.write("Checking %s..." % possible_config)
-                if os.path.isfile(possible_config):
-                    print "OK"
-                    options.config = p
-                else:
-                    print "Not there"
-            else:
-                print >> sys.stderr, "Config root check failed: %s" % p
-            sys.stdout.flush()
-            sys.stderr.flush()
-        if not options.config:
-            raise Exception("Could not find hackabot config file")
+    # if they didn't specify the config dir, try to search for it
+    if options.config_dir is None:
+        options.config_dir = find_config_root(HACKABOT_CONF_DIR, HACKABOT_CONF_DIR_ENV_VAR)
+        if not options.config_dir:
+            raise EnvironmentError((-1, "Could not find hackabot config dir"))
 
-    sys.exit(main(options,args))
+    # create the instance of the bot
+    bot = Hackabot(options)
+
+    # start it
+    bot.start()
+
+    return 0
+
+
+if __name__ == "__main__":
+    ret = main(options,args)
+    sys.exit(ret)
+

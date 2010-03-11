@@ -19,7 +19,10 @@ class Command(object):
 
     def __init__(self, command):
 
-        # this loads up the config using the env vars to find the file
+        # this gets a handle to the logging facility
+        self._log = Log()
+
+        # this loads up the config specified in env vars
         self._config = Config()
 
         # load the database config

@@ -33,7 +33,7 @@ class Config(object):
             self._config_file = os.getenv('HACKABOT_CFG')
         
         if self._config_file == None:
-            log.critical('Could not load hackabot config file')
+            self._log.critical('Could not load hackabot config file')
 
         # load the configuration
         c = open(self._config_file, 'r')
@@ -47,6 +47,10 @@ class Config(object):
         """
         This sets sane defaults for values that must be defined.
         """
+        # set the directory default if it doesn't exist
+        if not self._config.has_key('directory'):
+            self._config['directory'] = ''
+
         # set reconnect default if it doesn't exist
         if not self._config.has_key('reconnect'):
             self._config['reconnect'] = Config.DEFAULT_RECONNECT
@@ -70,10 +74,15 @@ class Config(object):
     def has_key(self, key):
         return self._config.has_key(key)
 
+    def get_config_filename(self):
+        return self._config_file
+
+    def get_config_dir(self):
+        return os.path.dirname(self._config_file)
+
     def __getitem__(self, key):
         if self._config.has_key(key):
             return self._config[key]
-
         return None
 
     def __setitem__(self, key, value):
