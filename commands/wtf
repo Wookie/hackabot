@@ -25,7 +25,7 @@ class Wtf(Command):
         'sqlite': { 
             'random' : 'SELECT id,acronym,text,lastused FROM wtf ORDER BY RANDOM()*(1/lastused) DESC LIMIT 1',
             'lookup' : 'SELECT id,acronym_i,acronym,text,lastused FROM wtf WHERE acronym_i = ?',
-            'add' : 'INSERT INTO wtf SET (acronym_i, acronym, text, nick, chan, date) VALUES (?,?,?,?,?,?)',
+            'add' : 'INSERT INTO wtf (acronym_i, acronym, text, nick, chan, date) VALUES (?,?,?,?,?,date("now"))',
             'touch' : "UPDATE wtf SET ('lastused') VALUES (?) WHERE id = ?"
             }
         }
@@ -58,12 +58,38 @@ class Wtf(Command):
 
         # return the row
         if row != None:
-            print >> sys.stdout, 'send %s: %s: %s' % (self._nick, row['acronym'], row['text'])
+            print >> sys.stdout, 'send %s: Your random acronym is: %s == %s' % (self._nick, row['acronym'], row['text'])
         else:
             print >> sys.stdout, 'send %s: Sorry, there are no registered acronyms, try adding some...'
 
     def _add_acronym(self, acronym, definition):
-        pass
+
+        try:
+            # get the connection
+            conn = self._get_database_connection()
+            conn.row_factory = sqlite3.Row
+
+            # start a cursor
+            c = conn.cursor()
+
+            # run the query
+            chan = ''
+            if self._event_type.lower() == 'pubmsg':
+                chan = self._to
+            params = (acronym.lower(), acronym.upper(), definition, self._nick, chan)
+            c.execute(Wtf.Q[self._db.lower()]['add'], params)
+
+            # commit
+            conn.commit()
+
+            # clean up
+            c.close()
+            conn.close()
+        except Exception, err:
+            print >> sys.stderr, str(err)
+            print >> sys.stdout, 'send %s: Sorry, adding the acronym failed...' % self._nick
+        else:
+            print >> sys.stdout, 'send %s: Successfully added...' % self._nick
 
     def _return_definition(self, acronym):
         # get the connection
@@ -88,7 +114,7 @@ class Wtf(Command):
 
         # output results
         if row != None:
-            print >> sys.stdout, 'send %s: %s: %s' % (self._nick, row['acronym'], row['text'])
+            print >> sys.stdout, 'send %s: %s == %s' % (self._nick, row['acronym'], row['text'])
         else:
             print >> sys.stdout, 'send %s: Sorry, I don\'t know what %s means...' % acronym
 
