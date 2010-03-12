@@ -66,8 +66,10 @@ class Help(Command):
             cmd_path = os.path.join(cmd_dir, cmd)
 
             cmdf = open(cmd_path, 'r')
+            lines = cmdf.readlines()
+            cmdf.close()
             in_help = False
-            for line in cmdf.readlines():
+            for line in lines:
                 if re.match(r'^##HACKABOT_HELP##.*$', line):
                     if in_help:
                         return

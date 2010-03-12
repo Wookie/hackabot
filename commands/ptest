@@ -1,14 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 ##HACKABOT_HELP##
 # Sample command that uses new hackabot python command tools
 # !ptest
 ##HACKABOT_HELP##
 
-import string
 import sys
 import os
-from hackabot.command import Command
+
+from command import Command
 
 class PTest(Command):
     """
@@ -18,7 +18,7 @@ class PTest(Command):
     def __init__(self):
 
         # call the base constructor to set up everything
-        super(PTest, self).__init__()
+        super(PTest, self).__init__('ptest')
 
     def main(self):
         """

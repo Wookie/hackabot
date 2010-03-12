@@ -83,6 +83,22 @@ class Command(object):
         sys.stdout.close()
         sys.stderr.close()
 
+    def _print_help(self, path):
+        cmdf = open(path, 'r')
+        lines = cmdf.readlines()
+        cmdf.close()
+        in_help = False
+        for line in lines:
+            if re.match(r'^##HACKABOT_HELP##.*$', line):
+                if in_help:
+                    return
+                else:
+                    in_help = True
+                    continue
+            elif in_help:
+                c = re.match(r'^#\s*(.*)', line)
+                print >> sys.stdout, 'send %s' % c.group(1)
+
     def _get_log(self):
         return self._log
 

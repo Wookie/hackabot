@@ -88,7 +88,7 @@
         <key>sqlite</key>
         <map>
             <key>file</key>
-            <string>misc/sqlite.db</string>
+            <string>misc/sqlite3.db</string>
         </map>
     </map>
 
