@@ -1,0 +1,155 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Print scores from something++ and something-- statements
+# !score [something | --low | --high | --nicks]
+##HACKABOT_HELP##
+
+import sys
+import os
+
+from command import Command
+
+class Score(Command):
+    """
+    An example command using new command writing tools.
+    """
+
+    Q = {
+        'mysql': {
+            },
+        'sqlite': {
+            'lookup': 'SELECT value FROM score WHERE name = ?',
+            'list': 'SELECT name, value FROM score %s ORDER BY value %s LIMIT 5'
+            }
+        }
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Score, self).__init__('score')
+
+    def _get_query(self, name):
+        return Score.Q[self._db.lower()][name]
+
+    def _return_score(self, name):
+        # get the connection
+        conn = self._get_database_connection()
+
+        # start a cursor
+        c = conn.cursor()
+
+        # execute the lookup query
+        params = (name, )
+        c.execute(self._get_query('lookup'), params)
+
+        # get the row
+        row = c.fetchone()
+
+        # clean up
+        c.close()
+        conn.close()
+
+        score = 0
+        if row != None:
+            score = int(row['value'])
+        
+        if row['value'] == 1:
+            print >> sys.stdout, 'send %s has scored %s point!' % (name, row['value'])
+        else:
+            print >> sys.stdout, 'send %s has scored %s points!' % (name, row['value'])
+
+    def _get_channel_names(self, chan):
+        """
+        TODO: this needs to connect to the command socket and query for the 
+        names of all users in the given channel
+        """
+        return []
+
+    def _return_list(self, order, chan = None):
+        # get the connection
+        conn = self._get_database_connection()
+
+        # start a cursor
+        c = conn.cursor()
+
+        # get the list of names for users in the channel
+        where = 'WHERE 0'
+        if chan != None:
+            names = self._get_channel_names(chan)
+            if len(names) > 0:
+                where += ' OR name in ('
+                for i in range(0, len(names)):
+                    if i > 0:
+                        where += ', '
+                    where += '"%s"' % names[i]
+                where += ')'
+
+
+        if order == 'low':
+            order = 'ASC'
+        else:
+            order = 'DESC'
+
+        # execute the lookup query
+        q = self._get_query('list') % (where, order)
+        c.execute(q)
+
+        # get the row
+        rows = c.fetchmany()
+
+        # clean up
+        c.close()
+        conn.close()
+
+        # output the list order
+        print >> sys.stdout, 'sendnext'
+        if order == 'ASC':
+            print >> sys.stdout, 'Losers:'
+        else:
+            print >> sys.stdout, 'Top 5:'
+       
+        # output the people
+        for row in rows:
+            print >> sys.stdout, '  %s %s' % (row['name'], row['value'])
+
+    def main(self):
+
+        parts = self._msg.split()
+        order = None
+        chan = None
+        name = None
+        error = False
+        for part in parts:
+            if part.startswith('-h') or part.startswith('--high'):
+                if order is None:
+                    order = 'high'
+                else:
+                    error = True
+            elif part.startswith('-l') or part.startswith('--low'):
+                if order is None:
+                    order = 'low'
+                else:
+                    error = True
+            elif part.startswith('-n') or part.startswith('--nicks'):
+                chan = part
+            else:
+                if chan == None and order == None and !part.startswith('-'):
+                    # if they specified a name and nothing else, we'll look that one up
+                    name = part
+                else:
+                    error = True
+
+        if error:
+            self._print_help(os.path.realpath(__file__))
+            return None
+
+        if part:
+            self._return_score(name)
+            return None
+
+        self._return_list(order, chan)
+
+if __name__ == "__main__":
+    cmd = Score()
+    sys.exit(cmd.main())
