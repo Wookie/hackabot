@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Lists the names of everybody in a given channel
+# !names [channel]
+##HACKABOT_HELP##
+
+import sys
+import os
+import re
+
+from command import Command
+
+class Names(Command):
+    
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Names, self).__init__('names')
+
+    def main(self):
+
+        # get the argument
+        c = re.match(r'\s*(\S*).*', self._msg)
+        chan = c.group(1)
+
+        self._log.debug('len(chan) is %d' % len(chan))
+
+        if not len(chan):
+            self._print_help(os.path.realpath(__file__))
+            return None
+            
+        names = self._get_channel_names(chan)
+
+        # give sendnext command
+        print >> sys.stdout, "sendnext"
+
+        # print out the names
+        print >> sys.stdout, 'names in %s:' % chan
+        for name in names:
+            print >> sys.stdout, '  %s' % name
+
+        return None
+
+
+if __name__ == "__main__":
+    cmd = Names()
+    sys.exit(cmd.main())
