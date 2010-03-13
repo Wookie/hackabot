@@ -7,7 +7,6 @@
 
 import os
 import re
-import sqlite3
 import sys
 
 from command import Command
@@ -39,7 +38,6 @@ class Wtf(Command):
     def _return_random(self):
         # get the connection
         conn = self._get_database_connection()
-        conn.row_factory = sqlite3.Row
 
         # start a cursor
         c = conn.cursor()
