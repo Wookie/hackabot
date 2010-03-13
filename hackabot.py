@@ -315,7 +315,7 @@ class Hackabot(SingleServerIRCBot):
             else:
                 arg = None
 
-            r = self.do_prog(event, to, os.path.join(dir, hook), arg)
+            r = self.do_prog(event, to, os.path.join(dir, hook), arg, hook)
             if r == "noall" or r == "nohook":
                 ret = r
                 break
@@ -331,7 +331,6 @@ class Hackabot(SingleServerIRCBot):
         # calculate the path to the command script
         cmd = c.group(1)
         cmd_exe = os.path.join(self._commands_dir, cmd)
-        self._log.info('executing %s' % cmd_exe)
 
         # get the msg
         msg = c.group(2)
@@ -358,6 +357,8 @@ class Hackabot(SingleServerIRCBot):
             if len(action_msg) > 0:
                 self.privmsg(to, action_msg)
             return
+        
+        self._log.info('executing %s' % cmd_exe)
        
         # open a new process with I/O pipes
         #write,read = os.popen2(cmd)
@@ -392,7 +393,7 @@ class Hackabot(SingleServerIRCBot):
             self._log.warn(err)
         p.stderr.close()
         
-        self._log.debug('done executing cmd %s' % cmd_exe)
+        self._log.debug('done executing %s' % cmd_exe)
 
         return ret
     
@@ -400,7 +401,9 @@ class Hackabot(SingleServerIRCBot):
         ret = "ok"
         sendnext = False
         rw = (sockfile.mode != 'r')
+        self._log.debug('socket in rw mode: %s' % rw)
 
+        self._log.debug('reading lines from socket')
         for line in sockfile.readlines():
             line = line.rstrip("\n")
 
@@ -569,7 +572,7 @@ class Hackabot(SingleServerIRCBot):
     
     def servclient(self, client):
         self._log.debug("New control socket connection.")
-        self.process(client.makefile('r+'))
+        self.process(client.makefile('r+', 0))
         self._log.debug("Closing control socket connection.")
         client.close()
 
