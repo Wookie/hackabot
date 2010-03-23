@@ -112,7 +112,7 @@ class Action(object):
                 db_file = os.path.join(self._config['directory'], db_file)
             
             # connect to the db
-            conn = sqlite3.connect(db)
+            conn = sqlite3.connect(db_file)
 
             # use a dict structure for each row
             conn.row_factory = sqlite3.Row

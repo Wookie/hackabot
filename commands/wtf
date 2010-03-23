@@ -12,9 +12,6 @@ import sys
 from command import Command
 
 class Wtf(Command):
-    """
-    An example command using new command writing tools.
-    """
 
     Q = { 
         'mysql': { 
@@ -65,7 +62,6 @@ class Wtf(Command):
         try:
             # get the connection
             conn = self._get_database_connection()
-            conn.row_factory = sqlite3.Row
 
             # start a cursor
             c = conn.cursor()
@@ -92,7 +88,6 @@ class Wtf(Command):
     def _return_definition(self, acronym):
         # get the connection
         conn = self._get_database_connection()
-        conn.row_factory = sqlite3.Row
 
         # start a cursor
         c = conn.cursor()

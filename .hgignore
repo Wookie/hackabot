@@ -8,3 +8,4 @@ syntax: glob
 .svn
 .DS_Store
 *.pyc
+*.pid

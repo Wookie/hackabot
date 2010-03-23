@@ -16,6 +16,7 @@ threads. Hopefully python will prove itself to be much better.
 import logging
 import os
 import re
+import resource
 import socket
 import string
 import subprocess
@@ -57,6 +58,17 @@ HACKABOT_ACL_FILE = 'acl.llsd.xml'
 # this is the name of the hackabot logging config file
 HACKABOT_LOG_FILE = 'logging.conf'
 
+# this is the maximum fd that we should try to close
+# if we are daemonizing
+HACKABOT_MAX_FD = 1024
+
+# this is the null device we redirect stdin/stdout/stderr
+# to when daemonizing
+if (hasattr(os, 'devnull')):
+    HACKABOT_REDIRECT_TO = os.devnull
+else:
+    HACKABOT_REDIRECT_TO = '/dev/null'
+
 class Hackabot(SingleServerIRCBot):
 
     def __init__(self, options):
@@ -75,6 +87,16 @@ class Hackabot(SingleServerIRCBot):
         # load up the acl
         self._acl_file = os.path.join(self._config_dir, HACKABOT_ACL_FILE)
         self._acl = Acl(self._acl_file)
+
+        # figure out what directory we live in, do this before becoming a
+        # daemon as the daemonize function changed the pwd to /
+        self._root_dir = self._config['directory']
+        if self._root_dir == '':
+            self._root_dir = os.path.dirname(os.path.realpath(__file__))
+
+        # daemonize if we are told to
+        if self._config.has_key('daemon') and self._config['daemon'] is True:
+            self._daemonize()
       
         # get the server info
         server_info = [ self._config['server'], self._config['port'] ]
@@ -83,16 +105,16 @@ class Hackabot(SingleServerIRCBot):
         if self._config.has_key('password'):
             server_info.append(self._config['password'])
 
-        # figure out what directory we live in 
-        self._root_dir = self._config['directory']
-        if self._root_dir == '':
-            self._root_dir = os.path.dirname(os.path.realpath(__file__))
-        
+       
         # calculate absolute paths to essential files/dirs
         self._socket_file = self._get_full_path(self._root_dir, self._config['socket'])
+        self._pid_file = self._get_full_path(self._root_dir, self._config['pidfile'])
         self._commands_dir = self._get_full_path(self._root_dir, self._config['commands'])
         self._hooks_dir = self._get_full_path(self._root_dir, self._config['hooks'])
- 
+
+        # create the pid file
+        self._create_pidfile()
+
         # set up the environment
         self._init_env()
 
@@ -102,6 +124,76 @@ class Hackabot(SingleServerIRCBot):
             self._config['nick'],
             self._config['name'],
             self._config['reconnect'] )
+
+    def _daemonize(self):
+        
+        self._log.info('Daemonizing hackabot...')
+        
+        try:
+            # Fork a child so that the parent can exit.  This  returns control
+            # to the command-line or shell.  It also guarantees that the child
+            # will no be a process group leader, since the child receives a new
+            # process ID and inherits the parent's process group ID.  This step
+            # is required to ensure that the next call to os.setsid works.
+            pid = os.fork()
+        except OSError, e:
+            raise Exception, "%s [%d]" % (e.strerror, e.errno)
+
+        if (pid == 0):  # the first child
+            # become the session leader
+            os.setsid()
+
+            try:
+                # fork a second child and exit immediately to prevent zombies.
+                # this causes the second child process to be orphaned, making
+                # the init process responsible for its cleanup.  And, since
+                # the first child is a session leader without a controlling
+                # terminal, it is possible for it to acquire one by opening a
+                # terminal in the future.  This second fork guarantees that
+                # the child is no longer a session leader, preventing the
+                # daemon from ever acquiring a controlling terminal.
+                pid = os.fork()
+            except OSError, e:
+                raise Exception, "%s [%d]" % (e.strerror, e.errno)
+
+            if (pid == 0):  # the second child
+                # now we need to change the pwd and umask to be safe
+                os.chdir(self._root_dir)
+
+                # set the umask
+                os.umask(0)
+            else:
+                # we use _exit() so that the atexit functions don't get called
+                os._exit(0)
+        else:
+            os._exit(0)
+
+        # get the maximum file descriptor, if there is no maximum, use the
+        # default value
+        maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+        if (maxfd == resource.RLIM_INFINITY):
+            maxfd = HACKABOT_MAX_FD
+
+        self._log.debug('Max fd is %d' % maxfd)
+
+        # now iterate over all file descriptors and close them
+        for fd in range(0, maxfd):
+            try:
+                os.close(fd)
+            except OSError: # we get this if it wasn't open
+                pass
+
+        # now redirect our stdin to /dev/null
+        self._log.debug('Redirecting stdin/stdout/stderr to: %s' % HACKABOT_REDIRECT_TO)
+        os.open(HACKABOT_REDIRECT_TO, os.O_RDWR) # standard input (0)
+
+        # now dup the fd to stdout and stderr to redirect them to
+        # /dev/null
+        os.dup2(0, 1)
+        os.dup2(0, 2)
+
+        self._log.info('Hackabot is now a daemon...')
+
 
     def _get_full_path(self, root_dir, path):
         """
@@ -115,6 +207,14 @@ class Hackabot(SingleServerIRCBot):
             return path
 
         return os.path.join(root_dir, path)
+
+    def _create_pidfile(self):
+        """
+        this creates a file containing the process' pid
+        """
+        f = open(self._pid_file, 'w+')
+        f.write("%d" % os.getpid())
+        f.close()
 
     def _init_env(self):
         """

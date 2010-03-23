@@ -7,7 +7,11 @@
          script will figure out which directory it is in and
          use that by default -->
     <key>directory</key>
-    <string></string>
+    <string>/home/huseby/Projects/hackabot</string>
+
+    <!-- flag for becoming a daemon -->
+    <key>daemon</key>
+    <boolean>true</boolean>
 
     <!-- if the following values begin with a / then hackabot 
          will interpret it as an absolute path. if it doesn't 
@@ -25,6 +29,10 @@
     <!-- the file to use for the command socket -->
     <key>socket</key>
     <string>sock</string>
+
+    <!-- the file to store the process pid in -->
+    <key>pidfile</key>
+    <string>misc/hackabot.pid</string>
 
     <!-- the database to use. this is the key used to map to 
          the database configuration specified below in the 
