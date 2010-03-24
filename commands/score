@@ -9,6 +9,7 @@ import sys
 import os
 
 from command import Command
+from control import ChannelNames
 
 class Score(Command):
     """
@@ -59,13 +60,6 @@ class Score(Command):
         else:
             print >> sys.stdout, 'send %s has scored %s points!' % (name, row['value'])
 
-    def _get_channel_names(self, chan):
-        """
-        TODO: this needs to connect to the command socket and query for the 
-        names of all users in the given channel
-        """
-        return []
-
     def _return_list(self, order, chan = None):
         # get the connection
         conn = self._get_database_connection()
@@ -76,8 +70,8 @@ class Score(Command):
         # get the list of names for users in the channel
         where = 'WHERE 0'
         if chan != None:
-            names = self._get_channel_names(chan)
-            if len(names) > 0:
+            cn = ChannelNames(chan)
+            if len(cn) > 0:
                 where += ' OR name in ('
                 for i in range(0, len(names)):
                     if i > 0:

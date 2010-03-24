@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 ##HACKABOT_HELP##
-# Lists the names of everybody in a given channel
-# !names [channel]
+# Shows the nick of the person who last changed the topic and when
+# !topicinfo [channel]
 ##HACKABOT_HELP##
 
 import sys
@@ -10,14 +10,14 @@ import os
 import re
 
 from command import Command
-from control import ChannelNames
+from control import ChannelTopicInfo
 
-class Names(Command):
+class TopicInfo(Command):
     
     def __init__(self):
 
         # call the base constructor to set up everything
-        super(Names, self).__init__('names')
+        super(TopicInfo, self).__init__('TopicInfo')
 
     def main(self):
 
@@ -30,19 +30,17 @@ class Names(Command):
             return None
            
         # get channel names 
-        cn = ChannelNames(chan)
+        ti = ChannelTopicInfo(chan)
         
         # give sendnext command
         print >> sys.stdout, "sendnext"
 
         # print out the names
-        print >> sys.stdout, '%d names in %s:' % (len(cn), chan)
-        for name in cn:
-            print >> sys.stdout, '  %s' % name
+        print >> sys.stdout, 'Topic was last changed by %s on %s' % (ti._nick, ti._date)
 
         return None
 
 
 if __name__ == "__main__":
-    cmd = Names()
+    cmd = TopicInfo()
     sys.exit(cmd.main())

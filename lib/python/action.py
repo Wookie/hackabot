@@ -5,12 +5,13 @@ loading the hackabot configuration, parsing the inputs from hackabot,
 and helps with establishing database connections.
 '''
 
-import MySQLdb
 import os
 import re
 import socket
-import sqlite3
 import sys
+
+# import the storm ORM
+from storm.locals import *
 
 # import the other hackabot utility classes
 from acl import Acl
@@ -99,11 +100,11 @@ class Action(object):
         this attempts to connect to the hackabot database
         """
         if self._db.lower() == 'mysql':
-            # connect to the mysql database
-            return MySQLdb.connect(host = self._db_config['host'], \
-                                   db = self._db_config['name'], \
-                                   user = self._db_config['user'], \
-                                   passwd = self._db_config['password'])
+            # build the mysql uri 
+            uri = 'mysql://%s:%s@%s/%s' % (self._db_config['user'], 
+                                           self._db_config['password'],
+                                           self._db_config['host'],
+                                           self._db_config['name'])
             
         elif self._db.lower() == 'sqlite':
             # get the db file path
@@ -111,52 +112,12 @@ class Action(object):
             if not db_file.startswith('/'):
                 db_file = os.path.join(self._config['directory'], db_file)
             
-            # connect to the db
-            conn = sqlite3.connect(db_file)
-
-            # use a dict structure for each row
-            conn.row_factory = sqlite3.Row
-
-            return conn
+            # build the sqlite uri
+            uri = 'sqlite:%s' % db_file
         else:
             return None
 
-    def _get_control_socket_connection(self):
-        sock_file = os.getenv('HACKABOT_SOCK')
-        if sock_file is None:
-            self._log.warn('Could not get command socket filename')
+        # return a storm Store instance
+        return Store(create_database(uri))
 
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.connect(sock_file)
-
-        return s
-
-    def _get_channel_names(self, chan):
-
-        # get the socket connection
-        sock = self._get_control_socket_connection()
-
-        # send it the channel name
-        sock.send('names %s\n' % chan)
-
-        # shutdown the write side so that all of the data is sent
-        sock.shutdown(socket.SHUT_WR)
-
-        # create a file-like object from the socket
-        sf = sock.makefile('r', 0)
-
-        # read in the response
-        line = sf.readline()
-        parts = line.split()
-        names = parts[2:]
-
-        # close the socket
-        sock.close()
-        sf.close()
-        
-        self._log.debug('names for chan %s: %s' % (parts[1], ' '.join(names)))
-
-        return names
-
-        
 

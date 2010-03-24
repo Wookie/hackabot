@@ -4,53 +4,36 @@
 This is the logging hook.  All messages are logged to the specified database.
 """
 
-import os
 import sys
 
 # import hackabot utility classes
 from hook import Hook
+from models import LogEntry
 
 class Log(Hook):
-
-    # Log queries
-    Q = { 
-        'mysql': { 
-            'log': ''
-        },
-        'sqlite': { 
-            'log' : 'INSERT INTO log (date, text, chan, nick, type) VALUES (date("now"),?,?,?,?)'
-        }
-    }
 
     def __init__(self):
 
         # call the base constructor to set up everything
         super(Log, self).__init__('log')
 
-        # set up our queries
-        self._queries = Log.Q[self._db.lower()]
-
     def main(self):
 
         try:
             # get the connection
-            conn = self._get_database_connection()
+            store = self._get_database_connection()
 
-            # start a cursor
-            c = conn.cursor()
+            # create the new log item
+            e = LogEntry(self._nick, self._to, self._msg, 0, self._event_type)
 
-            # run the query
-            params = (self._msg, self._to, self._nick, self._event_type)
-            c.execute(self._queries['log'], params)
+            # add it to the database
+            store.add(e)
 
-            # commit the change
-            conn.commit()
-
-            # clean up
-            c.close()
-            conn.close()
-
-            self._log.debug('Log successfully logged to database...')
+            # commit it
+            store.flush()
+            store.commit()
+            
+            self._log.debug('Log successfully logged to database...(id: %d)' % e.id)
        
         except Exception, err:
             self._log.warn('Log hook: %s' % err)

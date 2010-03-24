@@ -4,53 +4,35 @@
 This is a stats hook that tracks people coming and going.
 """
 
-import os
 import sys
 
 # import hackabot utility classes
 from hook import Hook
+from models import LogEntry
 
 class Stats(Hook):
-
-    # Log queries
-    Q = { 
-        'mysql': { 
-            'stats': ''
-        },
-        'sqlite': { 
-            'stats' : 'INSERT INTO log (date, text, chan, nick, type) VALUES (date("now"),?,?,?,"stats")'
-        }
-    }
 
     def __init__(self):
 
         # call the base constructor to set up everything
-        super(Stats, self).__init__('stats')
-
-        # set up our queries
-        self._queries = Stats.Q[self._db.lower()]
+        super(Stats, self).__init__('Stats')
 
     def main(self):
-
         try:
             # get the connection
-            conn = self._get_database_connection()
+            store = self._get_database_connection()
 
-            # start a cursor
-            c = conn.cursor()
+            # create the new log item
+            e = LogEntry(self._nick, self._to, self._msg, 0, 'stats')
 
-            # run the query
-            params = (self._msg, self._to, self._nick)
-            c.execute(self._queries['stats'], params)
+            # add it to the database
+            store.add(e)
 
-            # commit the change
-            conn.commit()
-
-            # clean up
-            c.close()
-            conn.close()
-
-            self._log.debug('Stats successfully logged to database...')
+            # commit it
+            store.flush()
+            store.commit()
+            
+            self._log.debug('Stats successfully logged to database...(id: %d)' % e.id)
        
         except Exception, err:
             self._log.warn('Stats hook: %s' % err)
@@ -58,5 +40,5 @@ class Stats(Hook):
         return None
 
 if __name__ == "__main__":
-    hook = Log()
+    hook = Stats()
     sys.exit(hook.main())
