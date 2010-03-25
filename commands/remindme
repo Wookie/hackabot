@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Simple little reminder
+# !remindme minutes <message you want to be reminded>
+##HACKABOT_HELP##
+
+import os
+import re
+import sys
+import time
+
+from command import Command
+
+class RemindMe(Command):
+    """
+    A simple reminder command
+    """
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(RemindMe, self).__init__('remindme')
+
+    def main(self):
+
+        if re.match(r'^\s*([0-9]+)\s+(.*)$', self._msg):
+       
+            # get the pieces 
+            c = re.match(r'^\s*([0-9]+)\s+(.*)$', self._msg)
+
+            # get the number of minutes and convert to seconds
+            t = int(c.group(1)) * 60
+
+            # get the reminder message
+            m = c.group(2)
+
+            # now sleep the number of seconds
+            time.sleep(t)
+
+            # time to remind the person
+            print >> sys.stdout, 'send %s: Times up!! *%s*' % (self._nick, m)
+            
+        return None
+
+
+if __name__ == "__main__":
+    cmd = RemindMe()
+    sys.exit(cmd.main())
+
+

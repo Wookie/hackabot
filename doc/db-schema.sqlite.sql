@@ -29,4 +29,21 @@ CREATE TABLE log (
     date TEXT
 );
 
+CREATE TABLE hangman (
+    chan TEXT,
+    state NUMERIC,
+    final TEXT,
+    phrase TEXT,
+    guess TEXT,
+    wrong TEXT,
+    nick TEXT
+);
+
+CREATE TABLE quotes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quote TEXT,
+    nick TEXT,
+    date TEXT
+);
+
 COMMIT;

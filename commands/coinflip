@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 ##HACKABOT_HELP##
 # Flips a coin and reports heads or tails
