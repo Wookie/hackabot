@@ -5,27 +5,18 @@
 # !wtf [something] | --add <acronym> <what it stands for>
 ##HACKABOT_HELP##
 
+import datetime
 import os
+import random
 import re
 import sys
 
+from storm.expr import Asc,Desc
+
 from command import Command
+from models import WTFEntry
 
 class Wtf(Command):
-
-    Q = { 
-        'mysql': { 
-            'random' : 'SELECT id,acronym,text,lastused FROM wtf ORDER BY RAND()*(1/lastused) DESC LIMIT 1',
-            'lookup' : 'SELECT id,acronym_i,acronym,text,lastused FROM wtf WHERE acronym_i = %s',
-            },
-        'sqlite': { 
-            'random' : 'SELECT id,acronym,text,lastused FROM wtf ORDER BY RANDOM()*(1/lastused) DESC LIMIT 1',
-            'lookup' : 'SELECT id,acronym_i,acronym,text,lastused FROM wtf WHERE acronym_i = ?',
-            'add' : 'INSERT INTO wtf (acronym_i, acronym, text, nick, chan, date) VALUES (?,?,?,?,?,date("now"))',
-            'touch' : "UPDATE wtf SET ('lastused') VALUES (?) WHERE id = ?"
-            }
-        }
-
 
     def __init__(self):
 
@@ -33,83 +24,69 @@ class Wtf(Command):
         super(Wtf, self).__init__('wtf')
 
     def _return_random(self):
+
         # get the connection
-        conn = self._get_database_connection()
+        store = self._get_database_connection()
 
-        # start a cursor
-        c = conn.cursor()
+        # get a random WTF entry
+        wtfs = store.find(WTFEntry)
+        if wtfs.is_empty():
+            print >> sys.stdout, 'send Sorry, there are no registered acronyms, try adding some...'
+            return
 
-        # execute the random query
-        c.execute(Wtf.Q[self._db.lower()]['random'])
+        # select a random wtf
+        max = wtfs.count() - 1
+        wtf = wtfs[random.randint(0, max)]
 
-        # get the row
-        row = c.fetchone()
+        # update the last used time
+        wtf.lastused = int(datetime.datetime.now().strftime("%y%m%d%H%M"))
 
-        # TODO: update the last used
+        # flush and commit
+        store.flush()
+        store.commit()
 
-        # clean up
-        c.close()
-        conn.close()
-
-        # return the row
-        if row != None:
-            print >> sys.stdout, 'send %s: Your random acronym is: %s == %s' % (self._nick, row['acronym'], row['text'])
-        else:
-            print >> sys.stdout, 'send %s: Sorry, there are no registered acronyms, try adding some...'
+        # return the wtf
+        print >> sys.stdout, 'send %s: Your random acronym is: %s == %s' % (self._nick, wtf.acronym, wtf.text)
 
     def _add_acronym(self, acronym, definition):
 
-        try:
-            # get the connection
-            conn = self._get_database_connection()
+        # get the connection
+        store = self._get_database_connection()
 
-            # start a cursor
-            c = conn.cursor()
+        # figure out the channel to record
+        chan = ''
+        if self._event_type.lower() == 'pubmsg':
+            chan = self._to
 
-            # run the query
-            chan = ''
-            if self._event_type.lower() == 'pubmsg':
-                chan = self._to
-            params = (acronym.lower(), acronym.upper(), definition, self._nick, chan)
-            c.execute(Wtf.Q[self._db.lower()]['add'], params)
+        # create the new entry
+        wtf = WTFEntry(acronym, definition, self._nick, chan)
 
-            # commit
-            conn.commit()
+        # add it
+        store.add(wtf)
 
-            # clean up
-            c.close()
-            conn.close()
-        except Exception, err:
-            print >> sys.stderr, str(err)
-            print >> sys.stdout, 'send %s: Sorry, adding the acronym failed...' % self._nick
-        else:
-            print >> sys.stdout, 'send %s: Successfully added...' % self._nick
+        # flush and commit
+        store.flush()
+        store.commit()
+
+        print >> sys.stdout, 'send %s: Successfully added...' % self._nick
 
     def _return_definition(self, acronym):
+
         # get the connection
-        conn = self._get_database_connection()
+        store = self._get_database_connection()
 
-        # start a cursor
-        c = conn.cursor()
-
-        # run the query
-        params = (acronym.lower(), )
-        c.execute(Wtf.Q[self._db.lower()]['lookup'], params)
-
-        # grab the row
-        row = c.fetchone()
-
-        # TODO: update the last used
-
-        # clean up
-        c.close()
-        conn.close()
+        # look up the acronym
+        wtf = store.find(WTFEntry, WTFEntry.acronym_i == unicode(acronym.lower())).one()
 
         # output results
-        if row != None:
-            print >> sys.stdout, 'send %s: %s == %s' % (self._nick, row['acronym'], row['text'])
+        if wtf is None:
+            print >> sys.stdout, 'send %s: Sorry, I don\'t know what %s means...' % (self._nick, acronym)
         else:
-            print >> sys.stdout, 'send %s: Sorry, I don\'t know what %s means...' % acronym
+            # update the last used
+            wtf.lastused = int(datetime.datetime.now().strftime("%y%m%d%H%M"))
+
+            # output the acronym definition
+            print >> sys.stdout, 'send %s: %s == %s' % (self._nick, wtf.acronym, wtf.text)
 
     def main(self):
 

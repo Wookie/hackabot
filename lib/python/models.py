@@ -69,3 +69,24 @@ class ScoreEntry(object):
         self.chan = unicode(chan)
         self.date = date
 
+class WTFEntry(object):
+    """
+    Class that represents a WTF entry
+    """
+    __storm_table__ = 'wtf'
+    id = Int(primary=True)
+    acronym_i = Unicode()
+    acronym = Unicode()
+    text = Unicode()
+    nick = Unicode()
+    chan = Unicode()
+    date = DateTime()
+    lastused = Int(default=1)
+
+    def __init__(self, acronym='', definition='', nick='', chan='', date=datetime.now()):
+        self.acronym_i = unicode(acronym.lower())
+        self.acronym = unicode(acronym)
+        self.text = unicode(definition)
+        self.nick = unicode(nick)
+        self.chan = unicode(chan)
+        self.date = date
