@@ -2,133 +2,95 @@
 
 ##HACKABOT_HELP##
 # Print scores from something++ and something-- statements
-# !score [something | --low | --high | --nicks]
+# --low shows the bottom 5 scores, --high shows the top 5
+# !score [ somenick | something | --low | --high ]
 ##HACKABOT_HELP##
 
 import sys
 import os
 
+from storm.expr import Asc,Desc
+
 from command import Command
 from control import ChannelNames
+from models import ScoreEntry
 
 class Score(Command):
-    """
-    An example command using new command writing tools.
-    """
-
-    Q = {
-        'mysql': {
-            },
-        'sqlite': {
-            'lookup': 'SELECT value FROM score WHERE name = ?',
-            'list': 'SELECT name, value FROM score %s ORDER BY value %s LIMIT 5'
-            }
-        }
 
     def __init__(self):
 
         # call the base constructor to set up everything
         super(Score, self).__init__('score')
 
-    def _get_query(self, name):
-        return Score.Q[self._db.lower()][name]
-
     def _return_score(self, name):
-        # get the connection
-        conn = self._get_database_connection()
 
-        # start a cursor
-        c = conn.cursor()
+        # get the db connection
+        store = self._get_database_connection()
 
-        # execute the lookup query
-        params = (name, )
-        c.execute(self._get_query('lookup'), params)
+        # try to look up the score
+        s = store.find(ScoreEntry, ScoreEntry.name == unicode(name)).one()
 
-        # get the row
-        row = c.fetchone()
+        if s is None:
+            print >> sys.stdout, "send I don't have a score for %s" % name
+            return
 
-        # clean up
-        c.close()
-        conn.close()
-
-        score = 0
-        if row != None:
-            score = int(row['value'])
-        
-        if row['value'] == 1:
-            print >> sys.stdout, 'send %s has scored %s point!' % (name, row['value'])
+        if s.value == 1:
+            print >> sys.stdout, 'send %s has scored %s point!' % (s.name, s.value)
         else:
-            print >> sys.stdout, 'send %s has scored %s points!' % (name, row['value'])
+            print >> sys.stdout, 'send %s has scored %s points!' % (s.name, s.value)
 
-    def _return_list(self, order, chan = None):
-        # get the connection
-        conn = self._get_database_connection()
+    def _return_list(self, order):
 
-        # start a cursor
-        c = conn.cursor()
+        # get the db connection
+        store = self._get_database_connection()
 
-        # get the list of names for users in the channel
-        where = 'WHERE 0'
-        if chan != None:
-            cn = ChannelNames(chan)
-            if len(cn) > 0:
-                where += ' OR name in ('
-                for i in range(0, len(names)):
-                    if i > 0:
-                        where += ', '
-                    where += '"%s"' % names[i]
-                where += ')'
-
-
+        # set the ordering
+        scores = store.find(ScoreEntry)
         if order == 'low':
-            order = 'ASC'
+            scores.order_by(Asc(ScoreEntry.value))
         else:
-            order = 'DESC'
+            scores.order_by(Desc(ScoreEntry.value))
 
-        # execute the lookup query
-        q = self._get_query('list') % (where, order)
-        c.execute(q)
+        # check for no scores in the db
+        if scores.is_empty():
+            print >> sys.stdout, 'There are no scores!'
+            return
 
-        # get the row
-        rows = c.fetchmany()
+        # figure out how total number of scores
+        max = 5
+        if scores.count() < 5:
+            max = scores.count()
 
-        # clean up
-        c.close()
-        conn.close()
-
-        # output the list order
+        # print the top 5/bottom 5 list
         print >> sys.stdout, 'sendnext'
-        if order == 'ASC':
+        if order == 'low':
             print >> sys.stdout, 'Losers:'
         else:
-            print >> sys.stdout, 'Top 5:'
-       
-        # output the people
-        for row in rows:
-            print >> sys.stdout, '  %s %s' % (row['name'], row['value'])
+            print >> sys.stdout, 'Top %s:' % max
+        for i in range(0,max):
+            print >> sys.stdout, '  %s %s' % (scores[i].name, scores[i].value)
 
     def main(self):
 
         parts = self._msg.split()
         order = None
-        chan = None
         name = None
+        chan = None
         error = False
         for part in parts:
-            if part.startswith('-h') or part.startswith('--high'):
-                if order is None:
-                    order = 'high'
-                else:
-                    error = True
-            elif part.startswith('-l') or part.startswith('--low'):
-                if order is None:
-                    order = 'low'
-                else:
-                    error = True
-            elif part.startswith('-n') or part.startswith('--nicks'):
-                chan = part
+            if part.startswith('-'):
+                if part.startswith('-h') or part.startswith('--high'):
+                    if order is None:
+                        order = 'high'
+                    else:
+                        error = True
+                elif part.startswith('-l') or part.startswith('--low'):
+                    if order is None:
+                        order = 'low'
+                    else:
+                        error = True
             else:
-                if chan == None and order == None and !part.startswith('-'):
+                if name == None and order == None:
                     # if they specified a name and nothing else, we'll look that one up
                     name = part
                 else:
@@ -138,11 +100,12 @@ class Score(Command):
             self._print_help(os.path.realpath(__file__))
             return None
 
-        if part:
+        if name:
+            self._log.debug('looking up score for %s' % name)
             self._return_score(name)
             return None
 
-        self._return_list(order, chan)
+        self._return_list(order)
 
 if __name__ == "__main__":
     cmd = Score()

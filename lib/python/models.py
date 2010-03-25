@@ -51,3 +51,21 @@ class LogEntry(object):
         self.type = type
         self.date = date
 
+class ScoreEntry(object):
+    """
+    Class that represents a nick's score
+    """
+    __storm_table__ = 'score'
+    name = Unicode(primary=True)
+    value = Int()
+    nick = Unicode()
+    chan = Unicode()
+    date = DateTime()
+
+    def __init__(self, name='', value=0, nick='', chan='', date=datetime.now()):
+        self.name = unicode(name)
+        self.value = value
+        self.nick = unicode(nick)
+        self.chan = unicode(chan)
+        self.date = date
+
