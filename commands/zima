@@ -20,8 +20,8 @@ class Zima(Command):
 
     def main(self):
 
-        if re.match(r'$(#\S+)\s+(.+)', self._msg):
-            c = re.match(r'$(#\S+)\s+(.+)', self._msg)
+        if re.match(r'^(#\S+)\s+(.+)$', self._msg):
+            c = re.match(r'^(#\S+)\s+(.+)$', self._msg)
             print >> sys.stdout, 'to %s' % c.group(1)
             print >> sys.stdout, 'send Waah waah! %s wants a Zima!' % c.group(2)
         else:

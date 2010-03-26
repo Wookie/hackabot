@@ -50,6 +50,7 @@ class ControlCommand(object):
         self._s.connect(sock_file)
 
     def _send(self, line):
+        self._log.debug('<<C %s' %line)
         self._s.send(line)
 
     def _get_result(self):
@@ -61,7 +62,13 @@ class ControlCommand(object):
         self._sf = self._s.makefile('r', 0)
 
         # now we can read all of the available data in the response
-        return self._sf.readlines()
+        lines = self._sf.readlines()
+
+        # log the lines
+        for line in lines:
+            self._log.debug('C>> %s' % line)
+
+        return lines
 
 class ChannelNames(ControlCommand):
     """
