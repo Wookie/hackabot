@@ -1,0 +1,108 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# When was someone last seen and where? (defaults to all channels)
+# !seen [here | #channel] nick
+##HACKABOT_HELP##
+
+import datetime
+import os
+import random
+import re
+import sys
+
+from storm.expr import Asc,Desc,And,Or
+
+from command import Command
+from models import LogEntry
+
+class Seen(Command):
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Seen, self).__init__('seen')
+
+    def _seen(self, where, who):
+
+        # get the connection
+        store = self._get_database_connection()
+
+        restrict = []
+        if where != None:
+            restrict += [ LogEntry.chan == where ]
+
+        # get the list of private channels exclusions
+        if self._cmd_config != None and self._cmd_config.has_key('privatechan'):
+            for privatechan in self._cmd_config['privatechan']:
+                restrict += [ LogEntry.chan != unicode(privatechan) ]
+
+        # this is a crazy complex query
+        entries = store.find(LogEntry, And( LogEntry.nick == unicode(who),
+                                            Or( 
+                                                And( 
+                                                     Or( LogEntry.type == u'msg',
+                                                         LogEntry.type == u'action',
+                                                         LogEntry.type == u'notice',
+                                                         LogEntry.type == u'join',
+                                                         LogEntry.type == u'part'
+                                                     ),
+                                                     LogEntry.chan != u'None',
+                                                     *restrict
+                                                ),
+                                                And( LogEntry.type == u'quit',
+                                                     LogEntry.chan == u'None'
+                                                )
+                                            )
+                                       ))
+
+        # get the most recent entry
+        entry = entries.order_by(Desc(LogEntry.id))[0]
+
+        # output results
+        if entry is None:
+            print >> sys.stdout, 'send %s: Sorry, I haven\'t seen %s...' % (self._nick, who)
+            return
+
+        if entry.type == 'msg' or entry.type == 'notice':
+            print >> sys.stdout, 'send %s: %s was last seen in %s saying "%s" at %s.' \
+                    % (self._nick, entry.nick, entry.chan, entry.text, entry.date)
+        elif entry.type == 'action':
+            print >> sys.stdout, 'send %s: %s was last seen in %s saying "/me %s" at %s.' \
+                    % (self._nick, entry.nick, entry.chan, entry.text, entry.date)
+        elif entry.type == 'join':
+            print >> sys.stdout, 'send %s: %s was last seen joining %s at %s.' \
+                    % (self._nick, entry.nick, entry.chan, entry.date)
+        elif entry.type == 'part':
+            print >> sys.stdout, 'send %s: %s was last seen leaving %s saying "%s" at %s.' \
+                    % (self._nick, entry.nick, entry.chan, entry.text, entry.date)
+        elif entry.type == 'quit':
+            print >> sys.stdout, 'send %s: %s was last seen quitting with "%s" at %s.' \
+                    % (self._nick, entry.nick, entry.text, entry.date)
+
+    def main(self):
+
+        # get where they are checking
+        if re.match(r'^\s*here\s*(\S+)\s*$', self._msg):
+            c = re.match(r'^\s*here\s*(\S+)\s*$', self._msg)
+            if self._to.startswith('#'):
+                where = self._to
+            who = c.group(1)
+        elif re.match(r'^\s*(#\S+)\s*(\S+)\s*$', self._msg):
+            c = re.match(r'^\s*(#\S+)\s*(\S+)\s*$', self._msg)
+            where = '#' + c.group(1)
+            who = c.group(2)
+        elif re.match(r'^\s*(\S+)\s*$', self._msg):
+            c = re.match(r'^\s*(\S+)\s*$', self._msg)
+            where = None
+            who = c.group(1)
+        else:
+            print >> sys.stdout, 'send missing parameter'
+            self._print_help(os.path.realpath(__file__))
+            return 1
+
+        self._seen(where, who)
+
+if __name__ == "__main__":
+    cmd = Seen()
+    sys.exit(cmd.main())

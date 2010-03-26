@@ -149,46 +149,6 @@
             <key>chan</key>
             <string>#chowdah</string>
         </map>
-        <map>
-            <key>chan</key>
-            <string>#dev</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#django</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#giab</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#identity</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#lindenlab</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#mercurial</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#open</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#opensrc</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#ops</string>
-        </map>
-        <map>
-            <key>chan</key>
-            <string>#seattle</string>
-        </map>
         -->
     </array>
 
@@ -210,7 +170,6 @@
         </map>
 
         <!-- seen command config -->
-        <!--
         <key>seen</key>
         <map>
             <key>privatechan</key>
@@ -218,7 +177,6 @@
                 <string>#private</string>
             </array>
         </map>
-        -->
         
         <!-- bookmark command -->
         <!--

@@ -17,6 +17,11 @@ class Command(Action):
     def __init__(self, command):
         super(Command, self).__init__(command)
 
+        # load the command's config
+        self._cmd_config = None
+        if self._config['cmdconfig'].has_key(command):
+            self._cmd_config = self._config['cmdconfig'][command]
+
     def _print_help(self, path):
         """
         This pulls the help block from the top of the command script
