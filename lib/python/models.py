@@ -90,3 +90,22 @@ class WTFEntry(object):
         self.nick = unicode(nick)
         self.chan = unicode(chan)
         self.date = date
+
+class TopicEntry(object):
+    """
+    Class that represents a topic entry
+    """
+    __storm_table__ = 'topic'
+    id = Int(primary=True)
+    text = Unicode()
+    nick = Unicode()
+    chan = Unicode()
+    date = DateTime()
+    lastused = Int(default=1)
+
+    def __init__(self, text='', nick='', chan='', date=datetime.now()):
+        self.text = unicode(text)
+        self.nick = unicode(nick)
+        self.chan = unicode(chan)
+        self.date = date
+

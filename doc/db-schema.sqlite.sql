@@ -46,4 +46,13 @@ CREATE TABLE quotes (
     date TEXT
 );
 
+CREATE TABLE topic (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    text TEXT,
+    nick TEXT,
+    chan TEXT,
+    date TEXT,
+    lastused NUMERIC DEFAULT '1'
+);
+
 COMMIT;

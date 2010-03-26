@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Set a rantom topic from a given list
+# !topic [--append] [something] | --add something
+##HACKABOT_HELP##
+
+import datetime
+import os
+import random
+import re
+import sys
+
+from command import Command
+from models import TopicEntry
+from control import ChannelTopic
+
+class Topic(Command):
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Topic, self).__init__('topic')
+
+
+    def _set(self, chan, topic):
+        # tell hackabot to set the new topic
+        print >> sys.stdout, 'to %s' % chan
+        print >> sys.stdout, 'topic %s' % topic
+
+    def _add_topic(self, topic):
+
+        # get the db connection
+        store = self._get_database_connection()
+
+        # create the new topic entry
+        t = TopicEntry(topic, self._nick, self._to)
+        store.add(t)
+
+        # slush and commit
+        store.flush()
+        store.commit()
+
+        print >> sys.stdout, 'send %s: Successfully added.' % self._nick
+
+    def _append_to_topic(self, topic):
+
+        # get the current topic and append to it
+        ct = ChannelTopic(self._to)
+        if len(ct._topic) > 0:
+            topic = ct._topic + ' ' + topic
+
+        self._set(self._to, topic)
+
+    def _set_topic(self, topic):
+
+        # get the topic mask for this channel if it exists
+        mask = ''
+        if self._cmd_config != None and \
+           self._cmd_config.has_key('topicmask') and \
+           self._cmd_config['topicmask'].has_key(self._to):
+            mask = self._cmd_config['topicmask'][self._to]
+
+        # build the topic string
+        topic = mask + topic
+
+        self._set(self._to, topic)
+
+    def _set_random(self):
+
+        # get the db connection
+        store = self._get_database_connection()
+
+        # grab a random topic from the db
+        topics = store.find(TopicEntry)
+
+        # check to see if there are topics in the db
+        if topics.is_empty():
+            print >> sys.stdout, 'send Sorry, there are no saved topics, try adding some...'
+            return
+
+        # TODO: take into account the last used somehow
+        # select a random topic
+        max = topics.count() - 1
+        topic = topics[random.randint(0, max)]
+
+        # update the last used time
+        topic.lastused = int(datetime.datetime.now().strftime("%y%m%d%H%M"))
+
+        # flush and commit
+        store.flush()
+        store.commit()
+
+        # now set the random topic
+        self._set_topic(topic.text)
+
+    def main(self):
+
+        if re.match(r'^\-\-add\s+(.+)$', self._msg):
+            # add the topic to the database
+            c = re.match(r'^\-\-add\s+(.+)$', self._msg)
+            self._add_topic(c.group(1))
+        elif re.match(r'^\-\-append\s*(.*)$', self._msg):
+            # append to the current topic
+            c = re.match(r'^\-\-append\s*(.*)$', self._msg)
+            self._append_to_topic(c.group(1))
+        elif len(self._msg) > 0:
+            # set the topic
+            self._set_topic(self._msg)
+        else:
+            # choose a random topic from the database
+            self._set_random()
+
+        return None
+
+
+if __name__ == "__main__":
+    cmd = Topic()
+    sys.exit(cmd.main())

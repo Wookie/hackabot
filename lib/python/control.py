@@ -143,9 +143,44 @@ class ChannelTopicInfo(ControlCommand):
         if len(result) > 0:
             self._log.debug('ChannelTopicInfo line: %s' % result[0])
             if re.match(r'^topicinfo\s+%s\s+(\S+)\s+(\d+)$' % self._chan, result[0]):
-                c = re.match(r'^topicinfo\s+%s\s+(\S+)\s+(\d+)$' % self._chan, line)
+                c = re.match(r'^topicinfo\s+%s\s+(\S+)\s+(\d+)$' % self._chan, result[0])
                 self._nick = c.group(1)
                 self._date = c.group(2)
                 self._log.debug('TopicInfo -- nick: %s, date: %s' % (self._nick, self._date))
+
+class ChannelTopic(ControlCommand):
+    """
+    Class that queries for the current topic
+    """
+
+    def __init__(self, chan):
+
+        # init the base class
+        super(ChannelTopic, self).__init__('ChannelTopic')
+
+        # store the chan
+        self._chan = chan
+
+        # init the topic to something sane
+        self._topic = ''
+
+        # query for the topic info
+        self._init_topic()
+
+    def _init_topic(self):
+
+        # send the topicinfo command
+        self._send('currenttopic %s\n' % self._chan)
+
+        # get the result
+        result = self._get_result()
+
+        # parse the result
+        if len(result) > 0:
+            self._log.debug('ChannelTopic line: %s' % result[0])
+            if re.match(r'^currenttopic\s+%s\s*(\S*)$' % self._chan, result[0]):
+                c = re.match(r'^currenttopic\s+%s\s*(\S*)$' % self._chan, result[0])
+                self._topic = c.group(1)
+                self._log.debug('CurrentTopic -- topic: %s' % self._topic)
 
 

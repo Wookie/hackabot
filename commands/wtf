@@ -34,6 +34,7 @@ class Wtf(Command):
             print >> sys.stdout, 'send Sorry, there are no registered acronyms, try adding some...'
             return
 
+        # TODO: take into account the last used somehow
         # select a random wtf
         max = wtfs.count() - 1
         wtf = wtfs[random.randint(0, max)]
