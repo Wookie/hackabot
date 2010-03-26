@@ -38,7 +38,7 @@
          the database configuration specified below in the 
          'databases' section. -->
     <key>database</key>
-    <string>sqlite</string>
+    <string>mysql</string>
     
     <!-- this is the "name" value associated with the bot's nick -->
     <key>name</key>
@@ -86,7 +86,7 @@
             <string>localhost</string>
             <key>name</key>
             <string>manatee_data</string>
-            <key>pass</key>
+            <key>password</key>
             <string>hackabot</string>
             <key>user</key>
             <string>manatee</string>
