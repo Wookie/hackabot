@@ -1,7 +1,7 @@
 Hackabot -- A crazy, hackable, and hacked up IRC bot
 	(C) Michael Marineau
 	Licensed under the GNU GPL v2.
-
+    
 ABOUT
 
 This bot was mainly written by Michael Marineau and includes many contributions
@@ -34,35 +34,28 @@ REQUIREMENTS
 Core Python bot: (included in lib/ if you need it)
 python
 python irclib >=0.4.6 
-python amara 1.0* or 1.1* (amara depnds on 4suite)
+python Linden Lab llbase utility module <http://bitbucket.org/lindenlab/llbase>
 
 Some of the long list of dependencies for various commands:
 python
-perl
-mysql
-perl XML::Simple
-perl DBI w/ MySQL
-python mysql
-perl URI::Find::Rule (TinyURL hook)
-perl WWW::Shorten::TinyURL (TinyURL hook)
-and other stuff I forget...
+perl (being phased out
+mysql (if using mysql)
+sqlite3 (if using sqlite3)
+python sqlite3 if using sqlite3
+python MySQLdb if using MySQL
+bash (some commands are written as bash scripts)
 
 
 INSTALL
 
-I recomend pinging me before you try to setup hackabot. I tend to forget
-to update the included mysql schema dump. :-P
-
-An example config is in etc/hackabot.example.xml for the bot itself and 
-most commands. Access control lists are in etc/acl.example.xml (copy to 
-acl.xml). Refer to the examples for more information. Command specific
-config options are of course optional if you don't plan on using that
-particular command (or hook).
+The main configuration file is config.llsd.xml.  It has comments for most
+of the settings.  An example access control list (ACL) is in 
+etc/acl.example.llsd.txt.  It is also commented pretty well.
 
 
 RUNNING
 
 Once you have a configured hackabot.xml with nick, server, and what ever else:
-./hackabot.py etc/hackabot.xml
+./hackabot.py  -c etc
 and poof! It's a bot!
 
