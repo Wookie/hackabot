@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Send a notice message
+# !notice [#chan] something to say
+##HACKABOT_HELP##
+
+import os
+import re
+import sys
+
+from command import Command
+
+class Notice(Command):
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Notice, self).__init__('notice')
+
+    def main(self):
+
+        if re.match(r'^(#\S+)\s+(.+)$', self._msg):
+            c = re.match(r'^(#\S+)\s+(.+)$', self._msg)
+            print >> sys.stdout, 'to %s' % c.group(1)
+            print >> sys.stdout, 'notice %s' % c.group(2)
+        elif re.match(r'^(.+)$', self._msg):
+            c = re.match(r'^(.+)$', self._msg)
+            print >> sys.stdout, 'notice %s' % c.group(1)
+        else:
+            self._print_help(os.path.realpath(__file__))
+            return 1
+
+        return None
+
+
+if __name__ == "__main__":
+    cmd = Notice()
+    sys.exit(cmd.main())
