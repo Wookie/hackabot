@@ -80,6 +80,21 @@ class Config(object):
     def get_config_dir(self):
         return os.path.dirname(self._config_file)
 
+    def get_config_val(self, key, default=None):
+        """
+        The key is a dot-delimited string specifying a config key:
+          cmdconfig.imitate.limitlines
+          topic.topicmask.#classiggamedev
+        """
+        keys = key.split('.')
+        cfg = self._config
+        for key in keys:
+            if cfg.has_key(key):
+                cfg = cfg[key]
+            else:
+                return default
+        return cfg
+
     def __getitem__(self, key):
         if self._config.has_key(key):
             return self._config[key]

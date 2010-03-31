@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Ping everybody in the channel
+# !pingall
+##HACKABOT_HELP##
+
+import os
+import re
+import sys
+
+from command import Command
+from control import ChannelNames
+
+class PingAll(Command):
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(PingAll, self).__init__('pingall')
+
+    def _nick_allowed(self, chan):
+
+        # get the list of names from the specified channel
+        cn = ChannelNames(chan)
+
+        # check if the name is in the channel
+        return (self._nick in cn)
+
+    def main(self):
+
+        # make sure this is in a channel
+        if self._event_type != 'pubmsg':
+            print >> sys.stdout, 'send This is not a channel!'
+            return 1
+
+        # get the list of names from this channel
+        cn = ChannelNames(self._to)
+
+        # build the list of names
+        names = ''
+        for name in cn:
+            if name == self._current_nick:
+                continue
+            if len(names) > 0:
+                names = names + ' ' + name
+            else:
+                names = name
+
+        # now send the ping
+        print >> sys.stdout, 'send ping %s' % names
+
+        return None
+
+
+if __name__ == "__main__":
+    cmd = PingAll()
+    sys.exit(cmd.main())

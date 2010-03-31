@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Say something random! Uses the previous lines as input
+# !imitate [nick] [lines]
+##HACKABOT_HELP##
+
+import datetime
+import os
+import random
+import re
+import sys
+
+from storm.expr import Desc,And
+
+from command import Command
+from models import LogEntry
+
+class Imitate(Command):
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Imitate, self).__init__('imitate')
+
+        # load the defaults
+        self._maxwords = self._config.get_config_val('cmdconfig.imitate.maxwords', 40)
+        self._wordlength = self._config.get_config_val('cmdconfig.imitate.wordlength', 5)
+        self._maxlines = self._config.get_config_val('cmdconfig.imitate.maxlines', 50)
+        self._limitlines = self._config.get_config_val('cmdconfig.imitate.limitlines', 200)
+
+    def _imitate(self, word , follow):
+        result = ""
+        tail = ""
+        while follow.has_key(word):
+            letter = random.choice(follow[word])
+            result += letter
+            word += letter
+            word = word[1:]
+        return result
+
+    def _return_imitation(self, nick):
+
+        # get the database connection
+        store = self._get_database_connection()
+
+        # look up log lines
+        lines = store.find(LogEntry, And(LogEntry.chan == unicode(self._to), 
+                                         LogEntry.nick == unicode(nick)))
+        lines = lines.order_by(Desc(LogEntry.id))[:self._maxlines]
+
+        text = '#' * self._wordlength
+        rows = [ line.text for line in lines ]
+        random.shuffle(rows)
+        for row in rows:
+            c = re.match(r'\S+:\s*(.*)', row)
+            if c:
+                row = c.group(1)
+            text += ' ' + row.lower()
+        text += '@' * self._wordlength
+
+        follow = {}
+
+        for i in range(0,len(text) - self._wordlength):
+            word = text[i:i + self._wordlength]
+            char = text[i + self._wordlength:i + self._wordlength + 1]
+            if not follow.has_key(word):
+                follow[word] = []
+            follow[word].append(char)
+
+        seedword = '#' * self._wordlength
+
+        result = self._imitate(seedword, follow)
+        while not len(re.split(' ', result)) < self._maxwords:
+            result = self._imitate(seedword, follow)
+
+        imitation = result[:len(result) - self._wordlength]
+
+        if len(imitation) == 0:
+            print >> sys.stdout, 'send Sorry, I wasn\'t able to imitate anything.'
+        else:
+            print >> sys.stdout, 'send %s' % imitation
+
+    def main(self):
+
+        # make sure this is in a channel
+        if self._event_type != 'pubmsg':
+            print >> sys.stdout, 'send This is not a channel!'
+            return 1
+
+        # get the command and arguments
+        c = re.match(r'^\s*(\S+)\s*(\d*)$', self._msg)
+        if c is None:
+            self._print_help(os.path.realpath(__file__))
+            return 1
+
+        # get the nick and max lines
+        nick = c.group(1)
+        if len(c.group(2)) > 0:
+            self._maxlines = int(c.group(2))
+
+        # make sure we're not going over our limit
+        if self._maxlines > self._limitlines:
+            self._maxlines = self._limitlines
+
+        self._return_imitation(nick)
+
+        return None
+
+
+if __name__ == "__main__":
+    cmd = Imitate()
+    sys.exit(cmd.main())
