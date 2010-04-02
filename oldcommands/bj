@@ -1,0 +1,143 @@
+#!/usr/bin/env python
+
+##HACKABOT_HELP##
+# Play a game of blackjack
+# !bj [ d | s | h | p | count | new | bet <amount> | balance ]
+# This is a single deck blackjack game between you and the dealer. Dealer hits 
+# on soft 17, players can split up to four hands, double down after split is allowed.
+# Commands:
+# !bj new       -- Creates your account with $100. Your account will stay active
+#                  as long as your account has a positive ballance.  When your 
+#                  account drops to $0 you can borrow another $100 from the house
+#                  and your total earnings will drop by $100.
+# !bj balance   -- Displays your current account balance.
+# !bj bet <amt> -- Sets your current bet amount.  This amount will be bet for
+#                  each hand until changed.  You can only bet up to the amount
+#                  in your account.
+# !bj count     -- Shows the current card count but costs you $50.
+# !bj d         -- Double down, with optional hand number
+# !bj s         -- Stand, with optional hand number
+# !bj h         -- Hit
+# !bj p         -- Split
+# !bj           -- Starts a new deal or shows the current cards on the table.
+##HACKABOT_HELP##
+
+import datetime
+import os
+import random
+import re
+import sys
+
+from command import Command
+from models import BlackjackDeck, BlackjackAccount, BlackjackDeal
+
+class Blackjack(Command):
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Blackjack, self).__init__('bj')
+
+    def _new_or_continue_deal(self):
+        pass
+
+    def _create_new_account(self):
+        # get the db connection
+        store = self._get_database_connection()
+
+        # try to look up their account
+        acct = store.find(BlackjackAccount, BlackjackAccount.nick == unicode(self._nick)).one()
+        
+        if acct != None:
+            # if they have a balance, show an error and their balance
+            if acct.balance > 0:
+                print >> sys.stdout, 'send You already an account'
+                self._show_balance()
+                return
+            else:
+                acct.balance = 100
+                acct.total_winnings -= 100
+                print >> sys.stdout, 'send You just borrowed $100 from the house'
+                store.flush()
+                store.commit()
+                return
+
+        print >> sys.stdout, 'Your initial balance is $100 and you\'re betting $5 each hand'
+        acct = BlackjackAccount(self._nick, 100, 0, 5)
+        store.add(acct)
+        store.flush()
+        store.commit()
+
+    def _show_balance(self):
+        pass
+
+    def _set_bet(self, amt):
+        pass
+
+    def _show_count(self):
+        pass
+
+    def _double_down(self):
+        pass
+
+    def _stand(self):
+        pass
+
+    def _hit(self):
+        pass
+
+    def _split(self):
+        pass
+
+    def main(self):
+
+        # make sure this is in the public channel
+        if self._event_type != 'pubmsg':
+            self._print_help(os.path.realpath(__file__))
+            return 1
+        
+        c = re.match(r'^(\S*)\s*(\d*)$', self._msg)
+        cmd = None
+        amt = None
+        if c:
+            if len(c.group(1)) > 0:
+                cmd = c.group(1)
+            if len(c.group(2)) > 0:
+                amt = int(c.group(2))
+
+        if cmd == None:
+            # start a new deal or continue a current deal
+            self._new_or_continue_deal()
+        elif cmd == 'new':
+            # try to create a new account
+            self._create_new_account()
+        elif cmd == 'balance':
+            # show the player's current balance and total earnings
+            self._show_balance()
+        elif cmd == 'bet':
+            # set the player's current bet amount
+            self._set_bet(amt)
+        elif cmd == 'count':
+            # show the count and charge the player $50
+            self._show_count()
+        elif cmd == 'd':
+            # double down on the current hand
+            self._double_down()
+        elif cmd == 's':
+            # stand on the current hand
+            self._stand()
+        elif cmd == 'h':
+            # hit the current hand
+            self._hit()
+        elif cmd = 'p':
+            # split the current hand
+            self._split()
+        else:
+            print >> sys.stdout, 'send Unknown command'
+            return 1
+
+        return None
+
+if __name__ == "__main__":
+    cmd = Blackjack()
+    sys.exit(cmd.main())

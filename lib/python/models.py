@@ -109,3 +109,36 @@ class TopicEntry(object):
         self.chan = unicode(chan)
         self.date = date
 
+class BlackjackDeck(object):
+    """
+    Represents the state of the deck for a game of blackjack.
+    """
+    __storm_table__ = 'blackjack_deck'
+    id = Int(primary=True)
+    deck = Unicode()
+    count = Int()
+
+class BlackjackAccount(object):
+    """
+    This is a player's account.
+    """
+    __storm_table__ = 'blackjack_account'
+    id = Int(primary=True)
+    nick = Unicode()
+    balance = Int()
+    total_winnings = Int()
+    bet = Int()
+
+class BlackjackDeal(object):
+    """
+    The state of the current hand of blackjack.
+    """
+    __storm_table__ = 'blackjack_deal'
+    id = Int(primary=True)
+    nick = Unicode()
+    dealer_cards = Unicode()
+    player_cards = Unicode()
+    bets = Unicode()
+    active_hand = Int()
+
+
