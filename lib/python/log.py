@@ -1,6 +1,7 @@
 '''
 singleton wrapper around logging.
 '''
+import inspect
 import os
 import sys
 import logging
@@ -43,19 +44,24 @@ class Log(object):
             self._logger = logging.getLogger()
 
         def debug(self, msg):
-            self._logger.debug(msg)
+            c = inspect.stack()[1][0]
+            self._logger.debug("%s:%d %s" % (c.f_code.co_filename, c.f_lineno, msg))
 
         def info(self, msg):
-            self._logger.info(msg)
+            c = inspect.stack()[1][0]
+            self._logger.info("%s:%d %s" % (c.f_code.co_filename, c.f_lineno, msg))
 
         def warn(self, msg):
-            self._logger.warn(msg)
+            c = inspect.stack()[1][0]
+            self._logger.warn("%s:%d %s" % (c.f_code.co_filename, c.f_lineno, msg))
 
         def error(self, msg):
-            self._logger.error(msg)
+            c = inspect.stack()[1][0]
+            self._logger.error("%s:%d %s" % (c.f_code.co_filename, c.f_lineno, msg))
 
         def critical(self, msg):
-            self._logger.critical(msg)
+            c = inspect.stack()[1][0]
+            self._logger.critical("%s:%d %s" % (c.f_code.co_filename, c.f_lineno, msg))
 
 
     # storage for the instance reference

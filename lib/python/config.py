@@ -86,6 +86,9 @@ class Config(object):
           cmdconfig.imitate.limitlines
           topic.topicmask.#classiggamedev
         """
+        if key is None:
+            return default
+
         keys = key.split('.')
         cfg = self._config
         for key in keys:

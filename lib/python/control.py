@@ -99,8 +99,9 @@ class ChannelNames(ControlCommand):
 
         # parse the results
         if len(result) > 0:
-            parts = result[0].split()
-            self._names = parts[2:]
+            if result[0] != None:
+                parts = result[0].split()
+                self._names = parts[2:]
 
     def __getitem__(self, index):
         return self._names[index]

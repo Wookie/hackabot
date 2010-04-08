@@ -10,12 +10,12 @@ import sys
 from hook import Hook
 from models import LogEntry
 
-class Log(Hook):
+class LogHook(Hook):
 
     def __init__(self):
 
         # call the base constructor to set up everything
-        super(Log, self).__init__('log')
+        super(LogHook, self).__init__('loghook')
 
     def main(self):
 
@@ -41,5 +41,5 @@ class Log(Hook):
         return None
 
 if __name__ == "__main__":
-    hook = Log()
+    hook = LogHook()
     sys.exit(hook.main())

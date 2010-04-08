@@ -19,10 +19,12 @@ import re
 import resource
 import socket
 import string
+import StringIO
 import subprocess
 import sys
 import thread
 import time
+import traceback
 from ircbot import SingleServerIRCBot
 from irclib import nm_to_n, nm_to_u, nm_to_h, Event
 from llbase import llsd
@@ -386,42 +388,59 @@ class Hackabot(SingleServerIRCBot):
             self.do_cmd(event, to)
 
     def do_hook(self, event, to):
-        ret = "ok"
+        try:
+            ret = "ok"
 
-        # calculate the hook directory path
-        dir = os.path.join(self._hooks_dir, event.eventtype())
+            # calculate the hook directory path
+            dir = os.path.join(self._hooks_dir, event.eventtype())
 
-        # make sure we have read access to the dir
-        if not os.access(dir,os.R_OK):
+            # make sure we have read access to the dir
+            if not os.access(dir,os.R_OK):
+                return ret
+
+            # get the list of files in the hook dir
+            hooks = os.listdir(dir)
+            hooks.sort()
+            for hook in hooks:
+                if re.match(r'\.', hook):
+                    continue
+
+                #self._log.warn('event arguments: %s' % event.arguments())
+                if event.eventtype() == "currenttopic":
+                    #self._log.warn('current topic event, num args %d' % len(event.arguments()))
+                    to = event.arguments()[0]
+                    arg = event.arguments()[1]
+                    event._source = None
+                elif event.eventtype() == "topicinfo":
+                    #self._log.warn('topicinfo event, num args %d' % len(event.arguments()))
+                    to = event.arguments()[0]
+                    arg = event.arguments()[1]+" "+event.arguments()[2]
+                    event._source = None
+                elif len(event.arguments()) > 0:
+                    #self._log.warn('num args %d' % len(event.arguments()))
+                    arg = event.arguments()[0]
+                else:
+                    #self._log.warn('no args')
+                    arg = None
+
+                #self._log.warn('running do_prog')
+                r = self.do_prog(event, to, os.path.join(dir, hook), arg, hook)
+                #self._log.warn('back from do_prog')
+                if r == "noall" or r == "nohook":
+                    ret = r
+                    break
+                elif r == "nocmd":
+                    ret = r
             return ret
-
-        # get the list of files in the hook dir
-        hooks = os.listdir(dir)
-        hooks.sort()
-        for hook in hooks:
-            if re.match(r'\.', hook):
-                continue
-
-            if event.eventtype() == "currenttopic":
-                to = event.arguments()[0]
-                arg = event.arguments()[1]
-                event._source = None
-            elif event.eventtype() == "topicinfo":
-                to = event.arguments()[0]
-                arg = event.arguments()[1]+" "+event.arguments()[2]
-                event._source = None
-            elif len(event.arguments()) > 0:
-                arg = event.arguments()[0]
-            else:
-                arg = None
-
-            r = self.do_prog(event, to, os.path.join(dir, hook), arg, hook)
-            if r == "noall" or r == "nohook":
-                ret = r
-                break
-            elif r == "nocmd":
-                ret = r
-        return ret
+        except KeyboardInterrupt, k:
+            self._log.warn('do_hook keyboard interrupt: %s' % str(k))
+            raise k
+        except SystemExit, s:
+            self._log.warn('do_hook system exit interrupt: %s' % str(s))
+            raise s
+        except Exception, e:
+            self._log.warn('do_hook exception:\n %s' % traceback.format_exc())
+            raise e
 
     def do_cmd(self, event, to):
         c = re.match(r'!([^\s/]+)\s*(.*)', event.arguments()[0])
@@ -450,7 +469,10 @@ class Hackabot(SingleServerIRCBot):
             access = 'private'
 
         # run an acl rule check
-        (action, action_msg) = self._acl.check_action(to, cmd, nm_to_n(event.source()), access)
+        person = '*'
+        if event.source() != None:
+            person = nm_to_n(event.source())
+        (action, action_msg) = self._acl.check_action(to, cmd, person, access)
 
         # if they are denied, send them the msg if any
         if action.lower() == 'deny':
@@ -461,39 +483,61 @@ class Hackabot(SingleServerIRCBot):
         self._log.info('executing %s' % cmd_exe)
        
         # open a new process with I/O pipes
-        #write,read = os.popen2(cmd)
-        p = subprocess.Popen(cmd_exe, shell=True, stdin=subprocess.PIPE, 
+        p = subprocess.Popen(cmd_exe, shell=True, bufsize=8192, stdin=subprocess.PIPE, 
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-       
-        # write the command parameters to the command handler's STDIN
-        print >> p.stdin, 'type %s' % event.eventtype()
-        if isinstance(event.source(), str):
-            print >> p.stdin, 'nick %s' % nm_to_n(event.source())
-            if event.source().find('!') > 0:
-                print >> p.stdin, 'user %s' % nm_to_u(event.source())
-            if event.source().find('@') > 0:
-                print >> p.stdin, 'host %s' % nm_to_u(event.source())
-        if isinstance(to, str):
-            print >> p.stdin, 'to %s' % to
-        if isinstance(msg, str):
-            print >> p.stdin, 'msg %s' % msg
-        print >> p.stdin, 'currentnick %s' % self.connection.get_nickname()
 
-        # flush and close
-        p.stdin.flush()
-        p.stdin.close()
+        #self._log.warn('child process id: %d' % p.pid)
+        # write the command parameters to the command handler's STDIN
+        logmsg = '%s ' % event.eventtype()
+        #self._log.warn('type: %s' % event.eventtype())
+        input = 'type %s\n' % event.eventtype()
+        if isinstance(event.source(), str):
+            #self._log.warn('nick: %s' % nm_to_n(event.source()))
+            logmsg += 'from: %s ' % nm_to_n(event.source())
+            input += 'nick %s\n' % nm_to_n(event.source())
+            if event.source().find('!') > 0:
+                #self._log.warn('user: %s' % nm_to_u(event.source()))
+                input += 'user %s\n' % nm_to_u(event.source())
+            if event.source().find('@') > 0:
+                #self._log.warn('host: %s' % nm_to_h(event.source()))
+                input += 'host %s\n' % nm_to_h(event.source())
+        if isinstance(to, str):
+            #self._log.warn('to: %s' % to)
+            logmsg += 'to: %s ' % to
+            input += 'to %s\n' % to
+        if isinstance(msg, str):
+            #self._log.warn('msg: %s' % msg)
+            logmsg += 'msg: %s' % msg
+            input += 'msg %s\n' % msg
+        #self._log.warn('currentnick: %s' % self.connection.get_nickname())
+        input += 'currentnick %s\n' % self.connection.get_nickname()
+
+        self._log.info(logmsg)
+
+        #self._log.info('calling communicate')
+        (sout, serr) = p.communicate(input)
+        #self._log.info('communicate done')
 
         # process the output from the command handler
-        ret = self.process(p.stdout, to, event)
-        p.stdout.close()
+        #self._log.info('calling process')
+        s = StringIO.StringIO(sout)
+        
+        # fake the mode member for the StringIO object so that it looks like a pipe
+        s.mode = 'r'
+
+        # process the output
+        ret = self.process(s, to, event)
+        #self._log.info('process done')
 
         # process the error output from the command handler
-        for err in p.stderr.readlines():
-            err = err.rstrip('\n')
-            self._log.warn(err)
-        p.stderr.close()
-        
-        self._log.debug('done executing %s' % cmd_exe)
+        #self._log.info('reading stderr messages from subprocess')
+        if serr != None:
+            for err in serr.split('\n'):
+                err = err.rstrip('\n')
+                if len(err) > 0:
+                    self._log.warn(err)
+            
+        #self._log.info('done executing %s' % cmd_exe)
 
         return ret
     
@@ -501,9 +545,7 @@ class Hackabot(SingleServerIRCBot):
         ret = "ok"
         sendnext = False
         rw = (sockfile.mode != 'r')
-        self._log.debug('socket in rw mode: %s' % rw)
 
-        self._log.debug('reading lines from socket')
         for line in sockfile.readlines():
             line = line.rstrip("\n")
 
