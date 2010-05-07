@@ -187,7 +187,7 @@ class Acl(object):
             if self._rules.has_key(key):
                 action = self._rules[key]['action']
                 msg = self._rules[key]['msg']
-                self._log.debug('%s => action: %s -- msg: %s' % (key, action, msg))
+                self._log.info('%s => action: %s -- msg: %s' % (key, action, msg))
         
         return (action, msg)
 

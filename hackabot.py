@@ -97,7 +97,7 @@ class Hackabot(SingleServerIRCBot):
             self._root_dir = os.path.dirname(os.path.realpath(__file__))
 
         # daemonize if we are told to
-        if self._config.has_key('daemon') and self._config['daemon'] is True:
+        if (not options.no_daemon) and (self._config.has_key('daemon') and self._config['daemon'] is True):
             self._daemonize()
       
         # get the server info
@@ -478,6 +478,7 @@ class Hackabot(SingleServerIRCBot):
         if action.lower() == 'deny':
             if len(action_msg) > 0:
                 self.privmsg(to, action_msg)
+            self._log.info('action %s denied by acl' % cmd_exe)
             return
         
         self._log.info('executing %s' % cmd_exe)

@@ -72,7 +72,7 @@ class Action(object):
             elif re.match(r'currentnick\s+(\S+)', line):
                 c = re.match(r'currentnick\s+(\S+)', line)
                 self._current_nick = c.group(1)
-
+        """
         self._log.debug('A>> event type: %s' % self._event_type)
         self._log.debug('A>> nick: %s' % self._nick)
         self._log.debug('A>> user: %s' % self._user)
@@ -80,6 +80,7 @@ class Action(object):
         self._log.debug('A>> msg: %s' % self._msg)
         self._log.debug('A>> to: %s' % self._to)
         self._log.debug('A>> currentnick: %s' % self._current_nick)
+        """
 
     def __del__(self):
         """

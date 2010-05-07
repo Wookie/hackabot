@@ -11,6 +11,7 @@ import sys
 # import hackabot utility classes
 from hook import Hook
 from models import ScoreEntry
+from control import ChannelNames
 
 class Score(Hook):
 
@@ -18,6 +19,13 @@ class Score(Hook):
 
         # call the base constructor to set up everything
         super(Score, self).__init__('score')
+
+    def _nick_in_channel(self, chan, nick):
+        # get the list of names from the specified channel
+        cn = ChannelNames(chan)
+
+        # check if hte name is in the channel
+        return (nick in cn)
 
     def main(self):
 
@@ -39,8 +47,17 @@ class Score(Hook):
             delta = -1
 
         # if it wasn't a ++/-- message, then we don't adjust any scores
-        if name is None:
+        if name is None or (not self._nick_in_channel(self._to, name)):
+            self._log.debug('Score can\'t be recorded for non-nick')
             return None
+
+        if self._nick.lower() == name.lower():
+            if delta > 0:
+                print >> sys.stdout, 'send %s: no self promotion' % self._nick
+                delta = -5
+            elif delta < 0:
+                print >> sys.stdout, 'send %s: Aww, cheer up, you can keep your point' % self._nick
+                delta = 0
 
         try:
             # get the connection

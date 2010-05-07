@@ -20,7 +20,7 @@ class CoinFlip(Command):
     def __init__(self):
 
         # call the base constructor to set up everything
-        super(CoinFlip, self).__init__()
+        super(CoinFlip, self).__init__('coinflip')
 
     def main(self):
         """

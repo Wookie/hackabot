@@ -85,6 +85,9 @@ class Help(Command):
         # get a list of commands the user is allowed to access
         commands = self._get_allowed_commands()
 
+        # sort the commands
+        commands.sort()
+
         # output the list
         print >> sys.stdout, 'sendnext'
         print >> sys.stdout, ' '.join(commands)
