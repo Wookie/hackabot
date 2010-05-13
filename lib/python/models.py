@@ -7,6 +7,25 @@ import sys
 from datetime import datetime
 from storm.locals import *
 
+class Note(object):
+    """
+    represents a ping snipe from one nick to another
+    """
+    __storm_table__ = 'note'
+    id = Int(primary=True)
+    nick_from = Unicode()
+    nick_to = Unicode()
+    chan = Unicode()
+    date = DateTime()
+    text = Unicode()
+
+    def __init__(self, fr='', to='', chan='', text='', date=datetime.now()):
+        self.nick_from = unicode(fr)
+        self.nick_to = unicode(to)
+        self.chan = unicode(chan)
+        self.date = date
+        self.text = unicode(text)
+
 class LogEntry(object):
     """
     Class that represents a single line in the log table

@@ -22,9 +22,9 @@ class LogHook(Hook):
         try:
             # get the connection
             store = self._get_database_connection()
-
+            
             # create the new log item
-            e = LogEntry(self._nick, self._to, self._msg, 0, self._event_type)
+            e = LogEntry(self._nick, self._to, self._msg, 0, self._event_type or 'msg')
 
             # add it to the database
             store.add(e)
@@ -36,7 +36,7 @@ class LogHook(Hook):
             self._log.debug('Log successfully logged to database...(id: %d)' % e.id)
        
         except Exception, err:
-            self._log.warn('Log hook: %s' % err)
+            self._log.warn('Log hook: %s (type %s)' % (err, self._event_type))
 
         return None
 

@@ -39,6 +39,7 @@ sys.path.insert(0, app_lib_dir)
 from log import Log
 from config import Config
 from acl import Acl
+from asyncproc import Process
 
 # this is the directory name that holds the hackabot config files
 # hackabot will first search the local directory for a directory
@@ -483,44 +484,40 @@ class Hackabot(SingleServerIRCBot):
         
         self._log.info('executing %s' % cmd_exe)
        
-        # open a new process with I/O pipes
-        p = subprocess.Popen(cmd_exe, shell=True, bufsize=8192, stdin=subprocess.PIPE, 
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        #self._log.warn('child process id: %d' % p.pid)
         # write the command parameters to the command handler's STDIN
         logmsg = '%s ' % event.eventtype()
-        #self._log.warn('type: %s' % event.eventtype())
         input = 'type %s\n' % event.eventtype()
         if isinstance(event.source(), str):
-            #self._log.warn('nick: %s' % nm_to_n(event.source()))
             logmsg += 'from: %s ' % nm_to_n(event.source())
             input += 'nick %s\n' % nm_to_n(event.source())
             if event.source().find('!') > 0:
-                #self._log.warn('user: %s' % nm_to_u(event.source()))
                 input += 'user %s\n' % nm_to_u(event.source())
             if event.source().find('@') > 0:
-                #self._log.warn('host: %s' % nm_to_h(event.source()))
                 input += 'host %s\n' % nm_to_h(event.source())
         if isinstance(to, str):
-            #self._log.warn('to: %s' % to)
             logmsg += 'to: %s ' % to
             input += 'to %s\n' % to
         if isinstance(msg, str):
-            #self._log.warn('msg: %s' % msg)
             logmsg += 'msg: %s' % msg
             input += 'msg %s\n' % msg
-        #self._log.warn('currentnick: %s' % self.connection.get_nickname())
         input += 'currentnick %s\n' % self.connection.get_nickname()
 
-        self._log.info(logmsg)
+        # launch the sub-process
+        p = Process(cmd_exe)
+        p.write(input)
+        p.closeinput()
+        while True:
+            try:
+                poll = p.wait(os.WNOHANG)
+                if poll != None:
+                    break
+            except:
+                break
 
-        #self._log.info('calling communicate')
-        (sout, serr) = p.communicate(input)
-        #self._log.info('communicate done')
+        # get the stdout and stderr from the sub-process
+        (sout, serr) = p.readboth()
 
         # process the output from the command handler
-        #self._log.info('calling process')
         s = StringIO.StringIO(sout)
         
         # fake the mode member for the StringIO object so that it looks like a pipe
@@ -528,18 +525,15 @@ class Hackabot(SingleServerIRCBot):
 
         # process the output
         ret = self.process(s, to, event)
-        #self._log.info('process done')
 
         # process the error output from the command handler
-        #self._log.info('reading stderr messages from subprocess')
         if serr != None:
             for err in serr.split('\n'):
                 err = err.rstrip('\n')
                 if len(err) > 0:
                     self._log.warn(err)
-            
-        #self._log.info('done executing %s' % cmd_exe)
-
+           
+        self._log.info('%s is done' % cmd_exe)
         return ret
     
     def process(self, sockfile, to = None, event = None):
@@ -554,6 +548,12 @@ class Hackabot(SingleServerIRCBot):
 
             if to and sendnext:
                 self.privmsg(to, line)
+                continue
+
+            c = re.match(r'reloadacl', line)
+            if to and c:
+                self._acl.reload()
+                self._log.info('Reloaded ACLs')
                 continue
 
             c = re.match(r'sendnext', line)

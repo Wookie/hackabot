@@ -11,7 +11,7 @@ import random
 import re
 import sys
 
-from storm.expr import Desc,And
+from storm.expr import Desc,And,Or
 
 from command import Command
 from models import LogEntry
@@ -46,7 +46,9 @@ class Imitate(Command):
 
         # look up log lines
         lines = store.find(LogEntry, And(LogEntry.chan == unicode(self._to), 
-                                         LogEntry.nick == unicode(nick)))
+                                         LogEntry.nick == unicode(nick),
+                                         Or(LogEntry.type == unicode('msg'),
+                                            LogEntry.type == unicode('action'))))
         lines = lines.order_by(Desc(LogEntry.id))[:self._maxlines]
 
         text = '#' * self._wordlength

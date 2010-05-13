@@ -257,6 +257,21 @@ CREATE TABLE `wtf` (
   UNIQUE KEY `acronym_i` (`acronym_i`),
   KEY `lastused` (`lastused`)
 );
+
+--
+-- Table structure for table `note`
+--
+
+CREATE TABLE `note` (
+  `id` int(10) NOT NULL auto_increment,
+  `nick_from` varchar(20) default NULL,
+  `nick_to` varchar(20) default NULL,
+  `chan` varchar(20) default NULL,
+  `date` varchar(20) default NULL,
+  `text` varchar(255) NOT NULL default '',
+  PRIMARY KEY  (`id`)
+);
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

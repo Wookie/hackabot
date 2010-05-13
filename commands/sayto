@@ -35,7 +35,7 @@ class SayTo(Command):
             msg = c.group(2)
             if self._nick_allowed(chan):
                 print >> sys.stdout, 'to %s' % chan
-                print >> sys.stdout, 'send %s' % msg
+                print >> sys.stdout, 'send from %s: %s' % (self._nick, msg)
             else:
                 print >> sys.stdout, 'send You are not in that channel, so I won\'t talk for you in there.'
         else:

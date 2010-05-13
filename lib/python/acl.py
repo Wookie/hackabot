@@ -32,6 +32,12 @@ class Acl(object):
         if self._acl_file == None:
             self._log.critical('Could not load hackabot acl file')
 
+        self._load_acls()
+
+    def reload(self):
+        self._load_acls()
+
+    def _load_acls(self):
         # load the acl's
         c = open(self._acl_file, 'r')
         fname = c.name

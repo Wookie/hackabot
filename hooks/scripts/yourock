@@ -21,7 +21,6 @@ class YouRock(Hook):
 
         if re.match(r'^.*\\o\/.*$', self._msg):
             print >> sys.stdout, 'sendnext'
-            print >> sys.stdout, '%s++' % self._nick
             print >> sys.stdout, 'You ROCK!!'
 
         return None

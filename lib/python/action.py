@@ -9,6 +9,10 @@ import os
 import re
 import socket
 import sys
+import fcntl
+
+# remote debugging facility
+from rdebug import *
 
 # import the storm ORM
 from storm.locals import *
@@ -18,13 +22,15 @@ from acl import Acl
 from log import Log
 from config import Config
 
-
 class Action(object):
     """
     Base class for all python hackabot actions
     """
 
     def __init__(self, action):
+
+        # turn on the debug signal
+        #listen()
 
         # store our action
         self._action = action
@@ -42,14 +48,33 @@ class Action(object):
         self._db = self._config['database']
         self._db_config = self._config['databases'][self._db]
 
-        # parse the input from hackabot
+        # initialize members
         self._event_type = None
         self._nick = None
         self._user = None
         self._host = None
         self._msg = None
         self._to = None
-        for line in sys.stdin.readlines():
+        self._current_nick = None
+
+        # make stdin non-blocking
+        fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
+        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+        # read in the input from hackabot
+        buf = ""
+        while True:
+            try:
+                b = sys.stdin.read()
+                if b == "":
+                    break
+                buf += b
+            except:
+                break
+
+        # parse the input from hackabot
+        lines = buf.split('\n')
+        for line in lines:
             line = line.rstrip("\n")
             if re.match(r'type\s+(\S+)', line):
                 c = re.match(r'type\s+(\S+)', line)
@@ -72,7 +97,8 @@ class Action(object):
             elif re.match(r'currentnick\s+(\S+)', line):
                 c = re.match(r'currentnick\s+(\S+)', line)
                 self._current_nick = c.group(1)
-        """
+
+        # log
         self._log.debug('A>> event type: %s' % self._event_type)
         self._log.debug('A>> nick: %s' % self._nick)
         self._log.debug('A>> user: %s' % self._user)
@@ -80,7 +106,6 @@ class Action(object):
         self._log.debug('A>> msg: %s' % self._msg)
         self._log.debug('A>> to: %s' % self._to)
         self._log.debug('A>> currentnick: %s' % self._current_nick)
-        """
 
     def __del__(self):
         """
@@ -121,4 +146,10 @@ class Action(object):
         # return a storm Store instance
         return Store(create_database(uri))
 
+#    def _set_proc_name(self, name):
+#        sys.argv[0] = name
+#        libc = cdll.LoadLibrary('libc.so.6')
+#        buff = create_string_buffer(len(name) + 1)
+#        buff.value = name
+#        libc.prctl(15, byref(buff), 0, 0, 0)
 

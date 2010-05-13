@@ -55,4 +55,13 @@ CREATE TABLE topic (
     lastused NUMERIC DEFAULT '1'
 );
 
+CREATE TABLE note (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nick_from TEXT,
+    nick_to TEXT,
+    chan TEXT,
+    date TEXT,
+    text TEXT
+);
+
 COMMIT;

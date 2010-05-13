@@ -2,7 +2,7 @@
 
 ##HACKABOT_HELP##
 # Run Administrative tasks
-# !admin join #chan | part #chan | nick name | quit msg
+# !admin join #chan | part #chan | nick name | quit msg | reload
 ##HACKABOT_HELP##
 
 import os
@@ -29,6 +29,8 @@ class Admin(Command):
 
         if cmd.lower() in ('quit', 'nick', 'join', 'part'):
             print >> sys.stdout, "%s %s" % (cmd, arg)
+        elif cmd.lower() == 'reload':
+            print >> sys.stdout, "reloadacl"
 
 if __name__ == "__main__":
     cmd = Admin()

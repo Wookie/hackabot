@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+"""
+This hook watches for people joining and checks to see if there
+are any ping snipes that need to be delivered.
+"""
+
+import sys
+
+# import hackabot utility classes
+from hook import Hook
+from models import Note
+
+class Snipe(Hook):
+
+    def __init__(self):
+
+        # call the base constructor to set up everything
+        super(Snipe, self).__init__('Snipe')
+
+    def _deliver_snipes(self):
+        # get the connection
+        store = self._get_database_connection()
+
+        # look up notes
+        notes = store.find(Note, Note.nick_to == unicode(self._nick))
+        for note in notes:
+            # deliver the snipe
+            print >> sys.stdout, 'to %s' % self._nick
+            if note.chan != '':
+                print >> sys.stdout, 'send ping from %s in %s on %s: %s' % (note.nick_from, note.chan, note.date, note.text)
+            else:
+                print >> sys.stdout, 'send ping from %s on %s: %s' % (note.nick_from, note.date, note.text)
+
+            # remove the note
+            store.remove(note)
+
+        # store and commit
+        store.flush()
+        store.commit()
+
+    def main(self):
+
+        if self._event_type == 'join':
+            self._deliver_snipes()
+
+        return None
+
+if __name__ == "__main__":
+    hook = Snipe()
+    sys.exit(hook.main())
