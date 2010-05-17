@@ -116,7 +116,7 @@ CREATE TABLE `log` (
   `chan` varchar(20) default NULL,
   `text` text,
   `num` int(11) default NULL,
-  `type` enum('msg','action','notice','join','part','quit','stats','topic') NOT NULL default 'msg',
+  `type` enum('msg','action','notice','join','part','quit','stats','topic','nick') NOT NULL default 'msg',
   `date` varchar(20) NOT NULL default '',
   PRIMARY KEY  (`id`)
 );

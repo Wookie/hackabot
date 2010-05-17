@@ -70,6 +70,116 @@ class ControlCommand(object):
 
         return lines
 
+class Channels(ControlCommand):
+    """
+    This gets the list of channels that manatee is currently in
+    """
+    def __init__(self):
+        super(Channels, self).__init__('channels')
+
+        self._channels = []
+        self._init_channels()
+
+    def _init_channels(self):
+        self._send('channels\n')
+        result = self._get_result()
+        if len(result) > 0:
+            if result[0] != None:
+                self._channels = result[0].strip().split(' ')[1:]
+
+    def __getitem__(self, index):
+        return self._channels[index]
+
+    def __setitem__(self, index, value):
+        raise Exception('channels list is read-only')
+
+    def __iter__(self):
+        return self._channels.__iter__()
+
+    def __len__(self):
+        return self._channels.__len__()
+
+    def next(self):
+        return self._channels.next()
+
+class AllChannels(ControlCommand):
+    """
+    This gets the list of all available channels on the server
+    """
+    def __init__(self):
+        super(AllChannels, self).__init__('allchannels')
+
+        self._channels = []
+        self._init_channels()
+
+    def _init_channels(self):
+        self._send('list\n')
+        result = self._get_result()
+        if len(result) > 0:
+            if result[0] != None:
+                self._channels = result[0].strip().split(' ')
+
+    def __getitem__(self, index):
+        return self._channels[index]
+
+    def __setitem__(self, index, value):
+        raise Exception('channels list is read-only')
+
+    def __iter__(self):
+        return self._channels.__iter__()
+
+    def __len__(self):
+        return self._channels.__len__()
+
+    def next(self):
+        return self._channels.next()
+
+
+class AllNames(ControlCommand):
+    """
+    Class that queries for all channels, then all names in each channel
+    and exposes the names by channel and all channels by name.
+    """
+
+    def __init__(self):
+
+        # init the base class
+        super(AllNames, self).__init__('AllNames')
+
+        # init members
+        self._channels_by_name = {}
+        self._names_by_channel = {}
+        
+        # do the query
+        self._init_names_by_channel()
+        self._init_channels_by_name()
+
+    def _init_names_by_channel(self):
+
+        # send the channels command
+        self._send('channels\n')
+
+        # get the result
+        result = self._get_result()
+
+        # parse the results
+        if len(result) > 0:
+            if result[0] != None:
+                parts = result[0].strip().split(' ')
+                for chan in parts[1:]:
+                    cn = ChannelNames(chan)
+                    self._names_by_channel[chan] = []
+                    for name in cn:
+                        self._names_by_channel[chan].append(name)
+
+    def _init_channels_by_name(self):
+        for chan in self._names_by_channel.iterkeys():
+            for name in self._names_by_channel[chan]:
+                if not self._channels_by_name.has_key(name):
+                    self._channels_by_name[name] = []
+
+                self._channels_by_name[name].append(chan)
+
 class ChannelNames(ControlCommand):
     """
     Class that queries for and wraps the nicks of all users in a channel.

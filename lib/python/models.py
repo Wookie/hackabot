@@ -44,7 +44,8 @@ class LogEntry(object):
                          'part':'part', 
                          'quit':'quit', 
                          'stats':'stats', 
-                         'topic':'topic'},
+                         'topic':'topic',
+                         'nick':'nick'},
                 set_map={'msg':'msg',
                          'pubmsg':'msg',
                          'privmsg':'msg',
@@ -60,7 +61,8 @@ class LogEntry(object):
                          'stats':'stats', 
                          'topic':'topic',
                          'currenttopic':'topic',
-                         'topicinfo':'topic'})
+                         'topicinfo':'topic',
+                         'nick':'nick'})
 
     def __init__(self, nick='', chan='', text='', num=0, type='msg', date=datetime.now()):
         self.nick = unicode(nick)

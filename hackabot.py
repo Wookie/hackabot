@@ -108,7 +108,6 @@ class Hackabot(SingleServerIRCBot):
         if self._config.has_key('password'):
             server_info.append(self._config['password'])
 
-       
         # calculate absolute paths to essential files/dirs
         self._socket_file = self._get_full_path(self._root_dir, self._config['socket'])
         self._pid_file = self._get_full_path(self._root_dir, self._config['pidfile'])
@@ -120,6 +119,10 @@ class Hackabot(SingleServerIRCBot):
 
         # set up the environment
         self._init_env()
+
+        # the list of all channels on the server
+        self._list_in_progress = False 
+        self._all_channels = []
 
         # launch the irc bot
         SingleServerIRCBot.__init__(
@@ -304,6 +307,10 @@ class Hackabot(SingleServerIRCBot):
         to = event.target()
         thread.start_new_thread(self.do_msg,(event,to))
 
+    def on_nick(self, c, event):
+        to = event.target()
+        thread.start_new_thread(self.do_hook,(event,to))
+
     def on_action(self, c, event):
         to = event.target()
         thread.start_new_thread(self.do_hook,(event,to))
@@ -323,6 +330,17 @@ class Hackabot(SingleServerIRCBot):
     def on_part(self, c, event):
         to = event.target()
         thread.start_new_thread(self.do_hook,(event,to))
+
+    #def _dispatcher(self, c, e):
+    #    self._log.info('dispatching on_%s' % e.eventtype())
+    #    super(Hackabot, self)._dispatcher(c, e)
+
+    def on_list(self, c, event):
+        if self._list_in_progress:
+            self._all_channels.append(event.arguments()[0])
+
+    def on_listend(self, c, event):
+        self._list_in_progress = False
 
     def on_topic(self, c, event):
         # quick hack so topic changes are handeled by currenttopic/topicinfo all the time
@@ -394,6 +412,9 @@ class Hackabot(SingleServerIRCBot):
 
             # calculate the hook directory path
             dir = os.path.join(self._hooks_dir, event.eventtype())
+
+            # log what hooks are being run
+            self._log.info('running %s hooks' % event.eventtype())
 
             # make sure we have read access to the dir
             if not os.access(dir,os.R_OK):
@@ -482,7 +503,7 @@ class Hackabot(SingleServerIRCBot):
             self._log.info('action %s denied by acl' % cmd_exe)
             return
         
-        self._log.info('executing %s' % cmd_exe)
+        self._log.debug('executing %s' % cmd_exe)
        
         # write the command parameters to the command handler's STDIN
         logmsg = '%s ' % event.eventtype()
@@ -533,7 +554,7 @@ class Hackabot(SingleServerIRCBot):
                 if len(err) > 0:
                     self._log.warn(err)
            
-        self._log.info('%s is done' % cmd_exe)
+        self._log.debug('%s is done' % cmd_exe)
         return ret
     
     def process(self, sockfile, to = None, event = None):
@@ -648,6 +669,32 @@ class Hackabot(SingleServerIRCBot):
                     names = ""
                 sockfile.write("names "+chan+names+"\n")
                 sockfile.flush()
+                continue
+
+            if rw and re.match(r'list',line):
+                # kick off the list command
+                if self._list_in_progress == False:
+                    self._all_channels = []
+                    self._list_in_progress = True
+                    self.connection.list()
+
+                # now wait up to 60 seconds for the response
+                i = 0
+                while(self._list_in_progress):
+                    # only loop for 30 seconds
+                    if i > 60:
+                        break
+                    i += 1
+                    time.sleep(1)
+
+                # if still in progress, write out 'error'
+                if self._list_in_progress:
+                    sockfile.write('error')
+                    sockfile.flush()
+                    self._list_in_progress = False
+                else:
+                    sockfile.write(' '.join(self._all_channels))
+                    sockfile.flush()
                 continue
 
             if rw and re.match(r'channels',line):

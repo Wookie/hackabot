@@ -2,7 +2,7 @@
 
 ##HACKABOT_HELP##
 # Run Administrative tasks
-# !admin join #chan | part #chan | nick name | quit msg | reload
+# !admin join #chan | part #chan | channels | nick name | quit msg | reload
 ##HACKABOT_HELP##
 
 import os
@@ -11,6 +11,7 @@ import string
 import sys
 
 from command import Command
+from control import Channels
 
 class Admin(Command):
     """
@@ -31,6 +32,9 @@ class Admin(Command):
             print >> sys.stdout, "%s %s" % (cmd, arg)
         elif cmd.lower() == 'reload':
             print >> sys.stdout, "reloadacl"
+        elif cmd.lower() == 'channels':
+            c = Channels()
+            print >> sys.stdout, 'send I am currently in: %s' % ' '.join(c)
 
 if __name__ == "__main__":
     cmd = Admin()
