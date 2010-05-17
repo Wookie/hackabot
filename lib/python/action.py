@@ -44,6 +44,9 @@ class Action(object):
         # this loads up the acl specified in env vars
         self._acl = Acl()
 
+        # get the root dir
+        self._root_dir = os.getenv('HACKABOT_DIR')
+
         # load the database config
         self._db = self._config['database']
         self._db_config = self._config['databases'][self._db]
@@ -120,6 +123,15 @@ class Action(object):
 
     def _get_acl(self):
         return self._acl
+
+    def _get_config(self):
+        return self._config
+
+    def _get_full_path(self, path):
+        if os.path.isabs(path):
+            return path
+
+        return os.path.join(self._root_dir, path)
 
     def _get_database_connection(self):
         """

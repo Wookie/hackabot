@@ -11,7 +11,7 @@
 
     <!-- flag for becoming a daemon -->
     <key>daemon</key>
-    <boolean>true</boolean>
+    <boolean>false</boolean>
 
     <!-- if the following values begin with a / then hackabot 
          will interpret it as an absolute path. if it doesn't 
@@ -33,6 +33,10 @@
     <!-- the file to store the process pid in -->
     <key>pidfile</key>
     <string>misc/hackabot.pid</string>
+
+    <!-- the file to store the start time of the daemon -->
+    <key>startfile</key>
+    <string>misc/hackabot.start</string>
 
     <!-- the database to use. this is the key used to map to 
          the database configuration specified below in the 

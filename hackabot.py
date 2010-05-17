@@ -111,11 +111,15 @@ class Hackabot(SingleServerIRCBot):
         # calculate absolute paths to essential files/dirs
         self._socket_file = self._get_full_path(self._root_dir, self._config['socket'])
         self._pid_file = self._get_full_path(self._root_dir, self._config['pidfile'])
+        self._start_file = self._get_full_path(self._root_dir, self._config['startfile'])
         self._commands_dir = self._get_full_path(self._root_dir, self._config['commands'])
         self._hooks_dir = self._get_full_path(self._root_dir, self._config['hooks'])
 
         # create the pid file
         self._create_pidfile()
+
+        # create the start file
+        self._create_startfile()
 
         # set up the environment
         self._init_env()
@@ -220,6 +224,14 @@ class Hackabot(SingleServerIRCBot):
         """
         f = open(self._pid_file, 'w+')
         f.write("%d" % os.getpid())
+        f.close()
+
+    def _create_startfile(self):
+        """
+        this creates a file that stores the datetime of when the daemon started
+        """
+        f = open(self._start_file, 'w+')
+        f.write("%s" % time.time())
         f.close()
 
     def _init_env(self):
