@@ -15,6 +15,7 @@ from storm.expr import Asc,Desc,And,Or
 
 from command import Command
 from models import LogEntry
+from control import AllNames
 
 class Seen(Command):
 
@@ -79,6 +80,15 @@ class Seen(Command):
         elif entry.type == 'quit':
             print >> sys.stdout, 'send %s: %s was last seen quitting with "%s" at %s.' \
                     % (self._nick, entry.nick, entry.text, entry.date)
+
+        # figure out which channels the person is currently in
+        an = AllNames()
+        chans = []
+        if an._channels_by_name.has_key(who):
+            chans = an._channels_by_name[who]
+
+        if len(chans) > 0:
+            print >> sys.stdout, 'send %s: %s is currently in: %s' % (self._nick, who, ' '.join(chans))
 
     def main(self):
 
