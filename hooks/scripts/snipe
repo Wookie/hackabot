@@ -18,15 +18,17 @@ class Snipe(Hook):
         # call the base constructor to set up everything
         super(Snipe, self).__init__('Snipe')
 
-    def _deliver_snipes(self):
+    def _deliver_snipes(self, to):
         # get the connection
         store = self._get_database_connection()
 
         # look up notes
-        notes = store.find(Note, Note.nick_to == unicode(self._nick))
+        self._log.debug('looking for snipes aimed at: %s' % to)
+        notes = store.find(Note, Note.nick_to == unicode(to))
         for note in notes:
             # deliver the snipe
-            print >> sys.stdout, 'to %s' % self._nick
+            self._log.debug('sending snipe to: %s' % to)
+            print >> sys.stdout, 'to %s' % to
             if note.chan != '':
                 print >> sys.stdout, 'send ping from %s in %s on %s: %s' % (note.nick_from, note.chan, note.date, note.text)
             else:
@@ -42,7 +44,9 @@ class Snipe(Hook):
     def main(self):
 
         if self._event_type == 'join':
-            self._deliver_snipes()
+            self._deliver_snipes(self._nick)
+        elif self._event_type == 'nick':
+            self._deliver_snipes(self._to)
 
         return None
 
